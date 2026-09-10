@@ -1,0 +1,2123 @@
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light only">
+<meta name="supported-color-schemes" content="light">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700;800&display=swap');
+:root{
+  --navy:#0B1F3A; --navy2:#132C52; --crimson:#9E1B32; --crimson-d:#7f1628; --gold:#D4AF37; --gold-d:#96751F;
+  --bg:#EFEEE8; --card:#FFFFFF; --line:#E4E1D6; --ink:#14213D; --muted:#6B7280;
+  --green:#1E7B34; --green-bg:#E7F5EA; --red:#B3261E; --red-bg:#FCEAE9;
+}
+*{box-sizing:border-box;}
+:root{color-scheme:light only;}
+html{background:#EFEEE8;}
+body{margin:0;background:var(--bg);font-family:'Inter',sans-serif;color:var(--ink);
+  -webkit-text-size-adjust:100%;}
+/* iOS/Android dark mode would otherwise darken the page background while our
+   text stays dark navy — pin the light palette explicitly. */
+@media (prefers-color-scheme:dark){
+  html{background:#EFEEE8 !important;}
+  body{background:#EFEEE8 !important;color:#14213D !important;}
+  .main{background:#EFEEE8 !important;}
+  .shell{background:#EFEEE8 !important;}
+  .view{background:transparent !important;}
+  .card, .ov-card, .stat-card, .board, .crm-table-wrap, .st-scroll,
+  .rank-list, .heat-wrap, .more-sheet, .modal, .picks-table-wrap,
+  .cons-row, .game-row, .progress-card, .h2h-side, .h2h-disagree-list,
+  .predict-table, .results-table{background:#FFFFFF !important;color:#14213D !important;}
+  .topbar h1{color:#0B1F3A !important;}
+  .topbar .sub, .scroll-hint, .sc-desc-text{color:#59616F !important;}
+  .section-title, .ov-card h3, .card h3{color:#0B1F3A !important;}
+  input, select, textarea{background:#fff !important;color:#14213D !important;}
+  /* elements that are intentionally dark keep their own light text */
+  .side, .mobile-head, .story-card, .mover-card,
+  table.st th, table.crm-table th, .board-row.head,
+  .results-table th, .predict-table th, .drawer-head, .modal-head{color:#fff !important;}
+}
+.shell{display:grid;grid-template-columns:230px 1fr;min-height:100vh;}
+@media (max-width:860px){.shell{grid-template-columns:1fr;}}
+
+.side{background:var(--navy);color:#fff;padding:22px 16px;display:flex;flex-direction:column;}
+.brand{display:flex;align-items:center;gap:10px;margin-bottom:26px;padding:0 4px;}
+.brand .mark{width:34px;height:34px;border-radius:50%;background:var(--crimson);display:flex;align-items:center;justify-content:center;
+  font-family:'Anton',sans-serif;font-size:15px;flex:none;box-shadow:0 2px 6px rgba(0,0,0,.3);}
+.brand .word{font-family:'Anton',sans-serif;font-size:15px;letter-spacing:.3px;line-height:1.15;}
+.brand .word small{display:block;font-family:'Inter',sans-serif;font-size:10px;font-weight:600;color:#9FB0CC;letter-spacing:.5px;}
+.nav{display:flex;flex-direction:column;gap:2px;margin-top:6px;}
+.nav button{all:unset;cursor:pointer;padding:10px 12px;border-radius:6px;font-size:13px;font-weight:600;
+  color:#C9D3E4;display:flex;align-items:center;gap:9px;transition:background .12s;}
+.nav button:hover{background:rgba(255,255,255,.07);color:#fff;}
+.nav button.active{background:var(--crimson);color:#fff;box-shadow:0 2px 8px rgba(158,27,50,.4);}
+.side-foot{margin-top:auto;padding-top:16px;border-top:1px solid rgba(255,255,255,.12);font-size:11.5px;color:#8B99B4;line-height:1.6;}
+.side-foot b{color:#D8DEEA;}
+.live-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:#4ADE80;margin-right:5px;
+  box-shadow:0 0 0 0 rgba(74,222,128,.6);animation:pulse 2s infinite;}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(74,222,128,.5);}70%{box-shadow:0 0 0 6px rgba(74,222,128,0);}100%{box-shadow:0 0 0 0 rgba(74,222,128,0);}}
+
+.main{padding:22px 26px 60px;}
+.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:12px;}
+.topbar h1{font-family:'Anton',sans-serif;font-weight:400;font-size:22px;margin:0;color:var(--navy);letter-spacing:.2px;}
+.topbar .sub{font-size:12.5px;color:var(--muted);margin-top:2px;}
+.topbar-right{display:flex;align-items:center;gap:8px;}
+.week-pill{background:var(--card);border:1px solid var(--line);padding:7px 14px;border-radius:20px;font-size:12.5px;font-weight:600;color:var(--navy);
+  box-shadow:0 1px 3px rgba(11,31,58,.06);}
+.week-pill b{color:var(--crimson);}
+
+.view{display:none;}
+.view.active{display:block;}
+.screenshot-target{background:var(--bg);padding:2px;}
+
+/* week selector */
+.weeksel{display:flex;gap:5px;overflow-x:auto;padding:3px 3px 10px;margin-bottom:6px;}
+.wk-chip{all:unset;cursor:pointer;flex:none;width:34px;height:30px;display:flex;align-items:center;justify-content:center;
+  border-radius:6px;font-size:11.5px;font-weight:700;background:var(--card);border:1px solid var(--line);color:var(--muted);}
+.wk-chip.played{color:var(--navy);}
+.wk-chip.active{background:var(--navy);color:#fff;border-color:var(--navy);}
+.wk-chip.future{opacity:.4;cursor:not-allowed;}
+
+/* ---------- LEADERBOARD ---------- */
+.searchrow{display:flex;gap:10px;margin-bottom:14px;}
+.searchrow input{flex:1;max-width:280px;border:1px solid var(--line);border-radius:6px;padding:9px 12px;font-size:13px;font-family:inherit;background:var(--card);}
+.board{background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden;}
+.board-row{display:grid;grid-template-columns:44px 44px 1fr 90px 70px 90px;align-items:center;
+  padding:11px 16px;border-bottom:1px solid var(--line);gap:10px;}
+.board-row:last-child{border-bottom:none;}
+.board-row.head{background:var(--navy);color:#fff;font-size:10.5px;font-weight:700;letter-spacing:.4px;padding:9px 16px;}
+.board-row.head span{color:#B9C4D9;}
+.rank{font-family:'Anton',sans-serif;font-size:19px;color:var(--navy);}
+.board-row.r1 .rank{color:#B8860B;}
+.board-row.r2{background:#FAFAF8;} .board-row.r3{background:#FBF8F2;}
+.mv{font-size:11.5px;font-weight:700;text-align:center;padding:3px 6px;border-radius:5px;}
+.mv.up{color:var(--green);background:var(--green-bg);} .mv.down{color:var(--red);background:var(--red-bg);} .mv.flat{color:#9CA3AF;background:#F3F4F6;}
+.who{display:flex;align-items:center;gap:9px;min-width:0;}
+.avatar{width:30px;height:30px;border-radius:50%;background:var(--navy);color:#fff;font-size:11px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;flex:none;}
+.who .nm{font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.who .tm{font-size:11px;color:var(--muted);}
+.spark{display:flex;gap:2px;align-items:flex-end;height:22px;}
+.spark i{width:5px;background:var(--gold);border-radius:1px;display:block;}
+.pts{font-family:'Anton',sans-serif;font-size:17px;text-align:right;color:var(--navy);}
+.rec{font-size:11.5px;color:var(--muted);text-align:right;}
+
+/* ---------- COMBINED STANDINGS + HEATMAP ---------- */
+.st-scroll{background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:auto;max-width:100%;}
+table.st{border-collapse:collapse;font-size:11.5px;white-space:nowrap;}
+table.st th{background:var(--navy);color:#fff;padding:8px 9px;font-size:9.5px;font-weight:700;text-align:center;
+  position:sticky;top:0;z-index:2;letter-spacing:.2px;}
+table.st td{padding:6px 9px;text-align:center;border-bottom:1px solid var(--line);}
+table.st th.wk{background:var(--navy2);}
+table.st .sticky1{position:sticky;left:0;background:#fff;z-index:1;text-align:left;box-shadow:2px 0 4px rgba(0,0,0,.05);}
+table.st th.sticky1{background:var(--navy);z-index:3;}
+table.st .sticky2{position:sticky;left:40px;background:#fff;z-index:1;text-align:left;box-shadow:2px 0 4px rgba(0,0,0,.05);min-width:150px;}
+table.st th.sticky2{background:var(--navy);z-index:3;}
+table.st tr:nth-child(even) td.sticky1, table.st tr:nth-child(even) td.sticky2{background:#FAFAF8;}
+.rank-chip{display:inline-block;min-width:22px;padding:2px 6px;border-radius:5px;background:var(--navy);color:#fff;font-weight:800;font-size:11px;}
+.rank-chip.g{background:#D4AF37;color:#4A3A08;} .rank-chip.s{background:#C0C0C0;color:#3a3a3a;} .rank-chip.b{background:#CD7F32;color:#fff;}
+.pl-name{font-weight:700;font-size:12px;} .pl-team{font-size:10px;color:var(--muted);}
+.tot-pts{font-family:'Anton',sans-serif;font-size:15px;color:var(--navy);background:#EAF0FA;padding:3px 8px;border-radius:5px;}
+.champ-chip{font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;color:#fff;}
+.wk-rank-cell{border-radius:4px;padding:3px 0;font-weight:700;color:#123;}
+.wk-rank-cell.tbd{color:var(--line);font-weight:400;}
+.pct-cell{font-weight:600;}
+
+/* ---------- ROTATING STORY CARD ---------- */
+.story-card{border-radius:12px;padding:20px 22px;color:#fff;position:relative;overflow:hidden;margin-bottom:18px;min-height:100px;
+  background:linear-gradient(135deg,var(--navy),#1a3a63);box-shadow:0 6px 20px rgba(11,31,58,.25);}
+.story-card .story-tag{font-size:10.5px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:var(--gold);}
+.story-card .story-headline{font-family:'Anton',sans-serif;font-size:24px;margin:8px 0 4px;letter-spacing:.2px;}
+.story-card .story-body{font-size:13px;color:#D6DEEC;max-width:600px;line-height:1.5;}
+.story-dots{display:flex;gap:6px;margin-top:14px;}
+.story-dots button{all:unset;width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.3);cursor:pointer;}
+.story-dots button.active{background:var(--gold);width:18px;border-radius:4px;}
+.story-nav{position:absolute;right:18px;top:18px;display:flex;gap:6px;}
+.story-nav button{all:unset;cursor:pointer;color:#fff;opacity:.6;font-size:13px;padding:4px 8px;border-radius:5px;}
+.story-nav button:hover{opacity:1;background:rgba(255,255,255,.1);}
+
+/* ---------- OVERVIEW ---------- */
+.ov-grid{display:grid;grid-template-columns:1.1fr 1fr;gap:16px;margin-bottom:16px;}
+@media (max-width:820px){.ov-grid{grid-template-columns:1fr;}}
+.ov-card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px 18px;}
+.ov-card h3{margin:0 0 10px;font-size:13px;color:var(--navy);display:flex;justify-content:space-between;align-items:center;}
+.ov-card h3 a{font-size:11px;color:var(--crimson);text-decoration:none;font-weight:600;cursor:pointer;}
+.ov-mini-row{display:grid;grid-template-columns:26px 1fr 50px;align-items:center;padding:6px 0;border-bottom:1px solid var(--line);font-size:12.5px;}
+.ov-mini-row:last-child{border-bottom:none;}
+.ov-mini-row .r{font-family:'Anton',sans-serif;color:var(--navy);font-size:14px;}
+.ov-mini-row .p{text-align:right;font-weight:700;color:var(--navy);}
+.ov-game{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--line);font-size:12.5px;}
+.ov-game:last-child{border-bottom:none;}
+.ov-game .split{font-size:11px;color:var(--muted);}
+.ov-hero-stats{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.ov-hero{text-align:center;padding:10px;}
+.ov-hero .n{font-family:'Anton',sans-serif;font-size:24px;color:var(--navy);}
+.ov-hero .l{font-size:10.5px;color:var(--muted);font-weight:600;}
+.ov-attn-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);font-size:12.5px;}
+.ov-attn-row:last-child{border-bottom:none;}
+.ov-attn-row a{color:var(--crimson);text-decoration:none;font-weight:700;font-size:11.5px;}
+.ov-attn-row .badge{background:var(--red-bg);color:var(--red);font-weight:800;font-size:11px;padding:2px 8px;border-radius:9px;margin-right:8px;}
+.ov-attn-row .badge.ok{background:var(--green-bg);color:var(--green);}
+
+/* ---------- CRM: MANAGE PLAYERS ---------- */
+.crm-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;}
+@media (max-width:760px){.crm-stats{grid-template-columns:1fr 1fr;}}
+.crm-stat{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:13px 16px;}
+.crm-stat .n{font-family:'Anton',sans-serif;font-size:22px;color:var(--navy);}
+.crm-stat .l{font-size:10.5px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.2px;margin-top:2px;}
+.crm-stat.warn .n{color:var(--crimson);}
+
+.crm-toolbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap;}
+.crm-toolbar input{flex:1;min-width:200px;max-width:320px;border:1px solid var(--line);border-radius:6px;padding:9px 12px;font-size:13px;font-family:inherit;background:var(--card);}
+.crm-filters{display:flex;gap:6px;}
+.crm-filter{all:unset;cursor:pointer;padding:7px 13px;border-radius:16px;font-size:12px;font-weight:600;color:var(--muted);background:var(--card);border:1px solid var(--line);}
+.crm-filter.active{background:var(--navy);color:#fff;border-color:var(--navy);}
+
+.crm-table-wrap{background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden;}
+table.crm-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+table.crm-table th{background:var(--navy);color:#fff;padding:9px 12px;font-size:10.5px;font-weight:700;text-align:left;}
+table.crm-table td{padding:9px 12px;border-bottom:1px solid var(--line);}
+table.crm-table tr:last-child td{border-bottom:none;}
+table.crm-table tbody tr{cursor:pointer;transition:background .1s;}
+table.crm-table tbody tr:hover{background:#F7F9FC;}
+.crm-name-cell{display:flex;align-items:center;gap:10px;}
+.crm-complete{display:flex;align-items:center;gap:7px;}
+.crm-complete .bar-bg{width:60px;height:6px;background:var(--line);border-radius:3px;overflow:hidden;}
+.crm-complete .bar-fg{height:100%;background:var(--green);}
+.crm-complete.warn .bar-fg{background:var(--crimson);}
+.crm-badge{font-size:9.5px;font-weight:800;padding:2px 7px;border-radius:9px;background:var(--red-bg);color:var(--red);}
+.crm-chev{color:var(--muted);text-align:right;}
+
+/* drawer (slide-over) */
+.drawer-backdrop{position:fixed;inset:0;background:rgba(11,31,58,.4);opacity:0;pointer-events:none;transition:opacity .18s;z-index:50;}
+.drawer-backdrop.open{opacity:1;pointer-events:auto;}
+.drawer{position:fixed;top:0;right:-480px;width:460px;max-width:92vw;height:100vh;background:var(--bg);
+  box-shadow:-8px 0 30px rgba(0,0,0,.2);transition:right .22s ease;z-index:51;display:flex;flex-direction:column;}
+.drawer.open{right:0;}
+.drawer-head{background:var(--navy);padding:22px 22px 18px;position:relative;flex:none;}
+.drawer-close{position:absolute;top:14px;right:16px;all:unset;cursor:pointer;color:#fff;font-size:20px;opacity:.7;width:26px;height:26px;text-align:center;line-height:26px;border-radius:50%;}
+.drawer-close:hover{opacity:1;background:rgba(255,255,255,.12);}
+.drawer-profile{display:flex;align-items:center;gap:14px;}
+.drawer-profile .av{width:52px;height:52px;border-radius:50%;background:var(--crimson);color:#fff;font-family:'Anton',sans-serif;
+  font-size:18px;display:flex;align-items:center;justify-content:center;flex:none;}
+.drawer-profile .nm{font-family:'Anton',sans-serif;font-size:19px;color:#fff;}
+.drawer-profile .tm{font-size:12px;color:#AEB8CB;margin-top:2px;}
+.edit-btn{background:rgba(255,255,255,.14);border:none;color:#fff;font-size:11.5px;font-weight:700;
+  padding:6px 12px;border-radius:14px;cursor:pointer;font-family:inherit;margin-left:auto;flex:none;}
+.edit-btn:hover{background:rgba(255,255,255,.24);}
+.edit-form{background:#F7F9FC;border:1px solid var(--line);border-radius:8px;padding:14px;margin-bottom:14px;}
+.edit-form label{display:block;font-size:10.5px;font-weight:700;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.3px;margin:0 0 4px;}
+.edit-form .fld{margin-bottom:11px;}
+.edit-form input, .edit-form select{width:100%;border:1px solid #CFC7B2;border-radius:6px;
+  padding:9px 11px;font-size:14px;font-family:inherit;background:#fff;color:var(--ink);}
+.edit-actions{display:flex;gap:8px;margin-top:4px;}
+.edit-actions button{flex:1;border:none;padding:10px;border-radius:6px;font-size:12.5px;
+  font-weight:700;cursor:pointer;font-family:inherit;}
+.edit-actions .save{background:var(--crimson);color:#fff;}
+.edit-actions .cancel{background:#fff;border:1.5px solid var(--navy);color:var(--navy);}
+.drawer-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);flex:none;}
+.drawer-stats .ds{background:var(--card);padding:11px 8px;text-align:center;}
+.drawer-stats .ds .n{font-family:'Anton',sans-serif;font-size:16px;color:var(--navy);}
+.drawer-stats .ds .l{font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-top:1px;}
+.drawer-body{flex:1;overflow-y:auto;padding:16px 20px 30px;}
+.drawer-picks-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.drawer-picks-head h3{margin:0;font-size:13px;color:var(--navy);}
+.drawer-picks-head input{border:1px solid var(--line);border-radius:6px;padding:6px 10px;font-size:11.5px;font-family:inherit;width:130px;}
+.drawer-save-note{font-size:10.5px;color:var(--green);font-weight:600;display:flex;align-items:center;gap:5px;margin-bottom:10px;}
+.drawer-save-note .dot{width:5px;height:5px;border-radius:50%;background:var(--green);}
+.picks-table-wrap{background:var(--card);border:1px solid var(--line);border-radius:8px;overflow-y:auto;max-height:min(48vh,420px);}
+table.picks-table{width:100%;border-collapse:collapse;font-size:11.5px;}
+table.picks-table th{background:#F2F1EC;color:var(--navy);padding:7px 9px;font-size:9.5px;font-weight:700;text-align:left;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:1;}
+table.picks-table td{padding:6px 9px;border-bottom:1px solid var(--line);}
+table.picks-table tr:last-child td{border-bottom:none;}
+.pick-editable{cursor:pointer;border-radius:4px;padding:3px 7px;font-weight:600;display:inline-block;}
+.pick-editable:hover{background:var(--green-bg);}
+.pick-editable.empty{color:var(--crimson);font-style:italic;font-weight:400;background:var(--red-bg);}
+.pick-toggle{display:flex;gap:4px;}
+.pick-toggle button{border:1.5px solid var(--line);background:#fff;padding:3px 8px;border-radius:4px;font-size:10.5px;font-weight:700;cursor:pointer;font-family:inherit;color:var(--navy);}
+.pick-toggle button.sel{background:var(--green-bg);border-color:var(--green);color:var(--green);}
+.result-icon.ok{color:var(--green);} .result-icon.no{color:var(--red);} .result-icon.pending{color:var(--muted);}
+
+/* import modal */
+.modal-backdrop{position:fixed;inset:0;background:rgba(11,31,58,.5);opacity:0;pointer-events:none;transition:opacity .15s;
+  z-index:60;display:flex;align-items:center;justify-content:center;}
+.modal-backdrop.open{opacity:1;pointer-events:auto;}
+.modal{background:var(--card);border-radius:12px;width:480px;max-width:92vw;max-height:85vh;overflow:hidden;display:flex;flex-direction:column;
+  box-shadow:0 20px 50px rgba(0,0,0,.3);}
+.modal-head{background:var(--navy);color:#fff;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;position:relative;}
+.modal-head h3{margin:0;font-size:15px;}
+.modal-head .drawer-close{position:static;}
+.modal-body{padding:20px;overflow-y:auto;}
+.import-drop{border:2px dashed var(--line);border-radius:10px;padding:36px 16px;text-align:center;color:var(--muted);font-size:13px;cursor:pointer;}
+.import-drop b{color:var(--navy);display:block;font-size:14px;margin-bottom:5px;}
+.import-preview{background:#F7F9FC;border:1px solid var(--line);border-radius:8px;padding:16px;margin-top:14px;}
+.import-preview .row{display:flex;justify-content:space-between;padding:5px 0;font-size:12.5px;border-bottom:1px solid var(--line);}
+.import-preview .row:last-child{border-bottom:none;}
+.import-preview .row b{color:var(--navy);}
+.import-actions{display:flex;gap:8px;margin-top:16px;}
+
+/* ---------- SCORECARD ---------- */
+.sc-selectrow{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;margin-bottom:18px;}
+.sc-select-group{display:flex;flex-direction:column;gap:5px;}
+.sc-select-group label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.3px;}
+.sc-select-group select{border:1px solid var(--line);border-radius:7px;padding:10px 14px;font-size:13.5px;font-family:inherit;
+  background:var(--card);min-width:220px;color:var(--ink);}
+.sc-vs-label{font-family:'Anton',sans-serif;font-size:16px;color:var(--muted);padding-bottom:10px;}
+
+.sc-card{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:18px;}
+.sc-hero{background:linear-gradient(135deg,var(--navy),#1a3a63);color:#fff;padding:22px 24px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;}
+.sc-hero .av{width:64px;height:64px;border-radius:50%;background:var(--crimson);color:#fff;font-family:'Anton',sans-serif;
+  font-size:22px;display:flex;align-items:center;justify-content:center;flex:none;box-shadow:0 4px 12px rgba(0,0,0,.3);}
+.sc-hero .id{flex:1;min-width:160px;}
+.sc-hero .nm{font-family:'Anton',sans-serif;font-size:24px;}
+.sc-hero .tm{font-size:12.5px;color:#AEB8CB;margin-top:2px;}
+.sc-hero .rankbadge{text-align:center;}
+.sc-hero .rankbadge .n{font-family:'Anton',sans-serif;font-size:30px;color:var(--gold);}
+.sc-hero .rankbadge .l{font-size:9.5px;color:#AEB8CB;text-transform:uppercase;font-weight:700;}
+.sc-tiles{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--line);}
+@media (max-width:760px){.sc-tiles{grid-template-columns:repeat(3,1fr);}}
+.sc-tile{background:var(--card);padding:13px 8px;text-align:center;}
+.sc-tile .n{font-family:'Anton',sans-serif;font-size:18px;color:var(--navy);}
+.sc-tile .l{font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-top:2px;}
+.sc-body{padding:18px 22px 20px;}
+.sc-storyline{font-size:12.5px;color:var(--ink);line-height:1.6;background:#F7F9FC;border-left:3px solid var(--crimson);
+  padding:11px 14px;border-radius:0 6px 6px 0;margin-bottom:16px;}
+.sc-subtitle{font-size:11.5px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.3px;margin:14px 0 8px;}
+.sc-trend{display:flex;align-items:flex-end;gap:4px;height:50px;padding:0 2px;}
+.sc-trend i{flex:1;background:var(--gold);border-radius:2px 2px 0 0;display:block;min-height:3px;}
+.sc-trend-labels{display:flex;gap:4px;padding:0 2px;margin-top:3px;}
+.sc-trend-labels span{flex:1;text-align:center;font-size:9px;color:var(--muted);}
+.sc-team-bars{display:flex;flex-direction:column;gap:6px;}
+.sc-team-row{display:grid;grid-template-columns:90px 1fr 44px;align-items:center;gap:8px;font-size:11.5px;}
+.sc-team-row .bar-bg{height:7px;background:var(--line);border-radius:4px;overflow:hidden;}
+.sc-team-row .bar-fg{height:100%;background:var(--green);}
+.sc-team-row .bar-fg.bad{background:var(--red);}
+
+.h2h-wrap{display:grid;grid-template-columns:1fr 90px 1fr;gap:0;align-items:stretch;margin-bottom:18px;}
+@media (max-width:700px){.h2h-wrap{grid-template-columns:1fr;}}
+.h2h-side{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;}
+.h2h-side .nm{font-family:'Anton',sans-serif;font-size:16px;color:var(--navy);}
+.h2h-side .tm{font-size:11px;color:var(--muted);margin-bottom:10px;}
+.h2h-stat{display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:1px solid var(--line);}
+.h2h-stat:last-child{border-bottom:none;}
+.h2h-stat b{color:var(--navy);}
+.h2h-mid{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;}
+.h2h-vs{font-family:'Anton',sans-serif;font-size:20px;color:var(--crimson);}
+.h2h-agree{background:var(--navy);color:#fff;border-radius:50%;width:64px;height:64px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;text-align:center;}
+.h2h-agree .n{font-family:'Anton',sans-serif;font-size:16px;}
+.h2h-agree .l{font-size:7.5px;font-weight:700;text-transform:uppercase;}
+.h2h-disagree-list{background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden;}
+.h2h-drow{display:grid;grid-template-columns:1fr 1fr 1fr;align-items:center;padding:9px 14px;border-bottom:1px solid var(--line);font-size:12px;gap:8px;}
+.h2h-drow:last-child{border-bottom:none;}
+.h2h-drow .g{color:var(--muted);font-size:11px;}
+.h2h-drow .pick{font-weight:700;}
+.h2h-drow .pick.right{color:var(--green);}
+.h2h-drow .pick.wrong{color:var(--red);text-decoration:line-through;text-decoration-color:rgba(179,38,30,.4);}
+.h2h-empty{padding:24px;text-align:center;color:var(--muted);font-size:12.5px;background:var(--card);border:1px solid var(--line);border-radius:10px;}
+
+/* ---------- ENTER RESULTS ---------- */
+.progress-card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px 18px;margin-bottom:16px;
+  display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;}
+.progress-card .lbl{font-size:12.5px;color:var(--muted);font-weight:600;}
+.progress-card .big{font-family:'Anton',sans-serif;font-size:22px;color:var(--navy);}
+.bar-track{flex:1;min-width:140px;height:8px;background:var(--line);border-radius:4px;overflow:hidden;}
+.bar-fill{height:100%;background:var(--crimson);border-radius:4px;transition:width .25s;}
+.autosave{font-size:11px;color:var(--green);font-weight:600;display:flex;align-items:center;gap:5px;}
+.autosave .dot{width:6px;height:6px;border-radius:50%;background:var(--green);}
+.game-list{display:flex;flex-direction:column;gap:8px;}
+.game-row{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px 14px;
+  display:grid;grid-template-columns:80px 1fr auto auto;align-items:center;gap:12px;}
+.game-row .when{font-size:11px;color:var(--muted);font-weight:600;}
+.matchup{font-size:13.5px;font-weight:600;color:var(--ink);}
+.pickbtns{display:flex;gap:6px;}
+.score-input{width:110px;border:1px solid var(--line);border-radius:6px;padding:7px 9px;
+  font-size:12px;font-family:inherit;color:var(--muted);}
+.download-card{margin-top:18px;background:var(--navy);border-radius:10px;padding:16px 18px;
+  display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;color:#fff;}
+.download-card-text{font-size:12.5px;color:#C6CEDD;line-height:1.55;flex:1;min-width:220px;}
+.download-card-text b{color:#fff;}
+.download-card-text code{background:rgba(255,255,255,.15);padding:1px 6px;border-radius:4px;font-size:11.5px;}
+.download-card .btn{flex:none;white-space:nowrap;}
+.pickbtn{border:1.5px solid var(--line);background:#fff;padding:7px 13px;border-radius:6px;font-size:12.5px;font-weight:700;
+  cursor:pointer;color:var(--navy);font-family:inherit;}
+.pickbtn:hover{border-color:var(--navy);}
+.pickbtn.sel{background:var(--green-bg);border-color:var(--green);color:var(--green);}
+.game-row.done{opacity:.55;}
+
+/* ---------- THIS WEEK (consensus) ---------- */
+.consensus-list{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+@media (max-width:700px){.consensus-list{grid-template-columns:1fr;}}
+.cons-row{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:9px 12px;}
+.cons-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;}
+.cons-teams{font-size:12.5px;font-weight:700;color:var(--ink);}
+.cons-when{font-size:10px;color:var(--muted);font-weight:600;}
+.cons-bar{height:16px;border-radius:4px;overflow:hidden;display:flex;background:var(--line);}
+.cons-seg{display:flex;align-items:center;font-size:10px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;}
+.cons-seg.a{background:var(--navy);justify-content:flex-start;padding-left:6px;}
+.cons-seg.b{background:var(--crimson);justify-content:flex-end;padding-right:6px;}
+.cons-labels{display:flex;justify-content:space-between;font-size:9.5px;color:var(--muted);margin-top:3px;}
+.upset-badge{background:var(--gold);color:#4A3A08;font-size:8.5px;font-weight:800;padding:1px 6px;border-radius:8px;letter-spacing:.2px;margin-left:6px;}
+
+/* ---------- RESULTS ---------- */
+.results-table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden;font-size:12.5px;}
+.results-table th{background:var(--navy);color:#fff;padding:8px 10px;font-size:10.5px;text-align:left;font-weight:700;}
+.results-table td{padding:8px 10px;border-bottom:1px solid var(--line);}
+.results-table tr:last-child td{border-bottom:none;}
+.winner-badge{font-weight:700;color:var(--navy);}
+.value-chip{display:inline-block;background:var(--gold);color:#4A3A08;font-weight:800;font-size:11px;padding:1px 8px;border-radius:9px;}
+.value-chip.hi{background:var(--crimson);color:#fff;}
+.breakdown-row{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;padding:8px 4px;border-bottom:1px solid var(--line);font-size:12px;}
+.breakdown-row:last-child{border-bottom:none;}
+.bd-side{display:flex;align-items:center;gap:8px;}
+.bd-side.right{flex-direction:row-reverse;text-align:right;}
+.bd-pct{font-weight:800;font-family:'Anton',sans-serif;font-size:15px;}
+.bd-pct.hi{color:var(--green);} .bd-pct.lo{color:var(--muted);}
+
+/* ---------- WEEKLY TRENDS ---------- */
+.movers-wrap{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px;}
+@media (max-width:700px){.movers-wrap{grid-template-columns:1fr;}}
+.mover-card{border-radius:10px;padding:15px 16px;color:#fff;position:relative;overflow:hidden;}
+.mover-card.riser{background:linear-gradient(135deg,#1E7B34,#155A26);}
+.mover-card.faller{background:linear-gradient(135deg,#9E1B32,#711327);}
+.mover-card .tag{font-size:10.5px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;opacity:.85;}
+.mover-card .name{font-family:'Anton',sans-serif;font-size:19px;margin:5px 0 2px;}
+.mover-card .detail{font-size:12px;opacity:.9;}
+.mover-card .bignum{position:absolute;right:14px;top:12px;font-family:'Anton',sans-serif;font-size:34px;opacity:.35;}
+.heat-wrap{background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:auto;padding:6px;}
+table.heat{border-collapse:collapse;width:100%;font-size:11.5px;}
+table.heat th{background:var(--navy);color:#fff;padding:8px 6px;font-size:10px;font-weight:700;text-align:center;position:sticky;top:0;}
+table.heat th:first-child{text-align:left;padding-left:12px;}
+table.heat td{padding:7px 6px;text-align:center;border-bottom:1px solid var(--line);color:#1a1a1a;}
+table.heat td:first-child{text-align:left;padding-left:12px;font-weight:600;white-space:nowrap;}
+table.heat td.trend{font-weight:700;}
+.legend{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:11px;color:var(--muted);}
+.legend .swatches{display:flex;}
+.legend .sw{width:16px;height:10px;}
+
+/* ---------- ANALYTICS ---------- */
+.stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:18px;}
+@media (max-width:760px){.stat-grid{grid-template-columns:1fr 1fr;}}
+@media (max-width:520px){.stat-grid{grid-template-columns:1fr;}}
+.stat-card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:15px 16px;}
+.stat-card .lbl{font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.3px;}
+.stat-card .val{font-family:'Anton',sans-serif;font-size:26px;color:var(--navy);margin:5px 0 3px;}
+.stat-card .note{font-size:11.5px;color:var(--muted);}
+.stat-card.accent{border-left:4px solid var(--crimson);}
+.rank-list{background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden;}
+.rank-item{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;border-bottom:1px solid var(--line);font-size:13px;}
+.rank-item:last-child{border-bottom:none;}
+.rank-item .bar-bg{flex:1;height:6px;background:var(--line);border-radius:3px;margin:0 12px;overflow:hidden;}
+.rank-item .bar-fg{height:100%;background:var(--gold);}
+.rank-item .num{font-weight:700;color:var(--navy);width:38px;text-align:right;}
+.section-title{font-size:13px;font-weight:700;color:var(--navy);margin:22px 0 10px;display:flex;align-items:center;gap:7px;}
+.sc-desc-text{font-size:11.5px;color:var(--muted);line-height:1.5;margin:-4px 0 10px;max-width:640px;}
+.section-title .chip{background:var(--navy);color:#fff;font-size:9.5px;padding:2px 7px;border-radius:8px;font-weight:700;}
+.section-title:first-child{margin-top:0;}
+
+.predict-table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden;font-size:12px;}
+.predict-table th{background:var(--navy);color:#fff;padding:7px 10px;font-size:10px;font-weight:700;text-align:left;}
+.predict-table th.num{text-align:right;}
+.predict-table td{padding:6px 10px;border-bottom:1px solid var(--line);}
+.predict-table td.num{text-align:right;font-variant-numeric:tabular-nums;}
+.predict-table tr:last-child td{border-bottom:none;}
+.heatcell{border-radius:3px;padding:2px 6px;display:inline-block;min-width:28px;text-align:center;font-weight:600;}
+.predict-foot{font-size:11px;color:var(--muted);padding:8px 10px;border-top:1px solid var(--line);background:#FAFAF8;}
+
+.split-row{display:grid;grid-template-columns:70px 1fr 46px;align-items:center;gap:10px;padding:8px 4px;border-bottom:1px solid var(--line);font-size:12px;}
+.split-row:last-child{border-bottom:none;}
+.split-date{color:var(--muted);font-size:11px;}
+.split-bar{height:20px;border-radius:5px;overflow:hidden;display:flex;}
+.split-seg{display:flex;align-items:center;font-size:10.5px;font-weight:700;color:#fff;padding:0 7px;white-space:nowrap;overflow:hidden;}
+
+/* ---------- IMPORT/EXPORT ---------- */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+@media (max-width:700px){.grid2{grid-template-columns:1fr;}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:18px;}
+.card h3{margin:0 0 4px;font-size:14px;color:var(--navy);}
+.card .desc{font-size:12px;color:var(--muted);margin:0 0 14px;line-height:1.5;}
+.dropzone{border:2px dashed var(--line);border-radius:8px;padding:26px 14px;text-align:center;color:var(--muted);font-size:12.5px;}
+.dropzone b{color:var(--navy);display:block;font-size:13px;margin-bottom:4px;}
+.btn{background:var(--navy);color:#fff;border:none;padding:9px 16px;border-radius:6px;font-size:12.5px;font-weight:700;
+  cursor:pointer;font-family:inherit;}
+.btn.crimson{background:var(--crimson);}
+.btn.ghost{background:#fff;border:1.5px solid var(--navy);color:var(--navy);}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap;}
+.importedlist{margin-top:14px;border-top:1px solid var(--line);padding-top:12px;}
+.imp-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;font-size:12px;}
+.imp-row .status{background:var(--green-bg);color:var(--green);font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;}
+/* mobile header bar — hidden on desktop, shown by the mobile media query */
+.mobile-head{display:none;align-items:center;justify-content:space-between;gap:10px;
+  background:var(--navy);color:#fff;margin:-14px -13px 14px;padding:12px 14px;}
+.mobile-head .mh-brand{font-family:'Anton',sans-serif;font-size:15px;display:flex;align-items:center;gap:8px;}
+.mobile-head .mh-mark{background:var(--crimson);border-radius:50%;width:26px;height:26px;
+  display:flex;align-items:center;justify-content:center;font-size:10px;flex:none;}
+.mobile-head .mh-week{font-size:10.5px;color:#AEB8CB;font-weight:600;text-align:right;}
+.scroll-hint{display:none;}
+.more-tab{display:none;}
+.more-backdrop, .more-sheet{display:none;}
+@media (max-width:760px){ .more-backdrop, .more-sheet{display:block;} }
+
+/* ============================================================
+   MOBILE  (<=760px)
+   ============================================================ */
+@media (max-width:760px){
+  /* stop any wide child from stretching the page and triggering zoom-out */
+  html, body{max-width:100%;overflow-x:hidden;}
+  body{font-size:15px;-webkit-text-size-adjust:100%;}
+  .shell{grid-template-columns:1fr;width:100%;max-width:100%;}
+  .main{padding:12px 12px 82px;min-width:0;max-width:100%;overflow-x:hidden;}
+  .view{min-width:0;max-width:100%;}
+
+  /* ---- iOS-style 5-item bottom tab bar ---- */
+  .side{position:fixed;bottom:0;left:0;right:0;top:auto;z-index:40;flex-direction:row;padding:0;
+    height:auto;background:rgba(11,31,58,.97);backdrop-filter:saturate(180%) blur(18px);
+    -webkit-backdrop-filter:saturate(180%) blur(18px);
+    border-top:.5px solid rgba(255,255,255,.16);box-shadow:none;}
+  .brand, .side-foot{display:none;}
+  .nav{flex-direction:row;margin:0;width:100%;gap:0;padding-bottom:env(safe-area-inset-bottom);}
+  /* only the 4 primary tabs + More live in the bar */
+  .nav button[data-tier="secondary"]{display:none;}
+  .nav button, .more-tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:3px;padding:8px 2px 7px;border-radius:0;font-size:0;background:none;border:none;
+    color:#8E9BB3;cursor:pointer;font-family:inherit;min-height:49px;}
+  /* replace the long label with the short one, iOS-style icon-over-caption */
+  .nav button::before, .more-tab::before{content:attr(data-short);font-size:10px;font-weight:600;
+    order:2;letter-spacing:.1px;}
+  .nav button{font-size:0;}
+  .nav button.active{background:none;color:#fff;box-shadow:none;}
+  .nav button.active::before{color:#fff;}
+  .more-tab.active{color:#fff;}
+
+  /* ---- More sheet ---- */
+  .more-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.4);opacity:0;pointer-events:none;
+    transition:opacity .2s;z-index:44;}
+  .more-backdrop.open{opacity:1;pointer-events:auto;}
+  .more-sheet{position:fixed;left:0;right:0;bottom:0;z-index:45;background:var(--card);
+    border-radius:16px 16px 0 0;transform:translateY(102%);transition:transform .24s cubic-bezier(.32,.72,0,1);
+    padding:8px 0 calc(18px + env(safe-area-inset-bottom));box-shadow:0 -6px 26px rgba(0,0,0,.22);}
+  .more-sheet.open{transform:translateY(0);}
+  .more-grip{width:36px;height:4px;border-radius:2px;background:#D2CFC4;margin:0 auto 10px;}
+  .more-title{font-family:'Anton',sans-serif;font-size:16px;color:var(--navy);padding:0 20px 8px;}
+  .more-list button{all:unset;display:flex;align-items:center;gap:12px;width:100%;box-sizing:border-box;
+    padding:15px 20px;font-size:15.5px;color:var(--ink);border-top:.5px solid var(--line);cursor:pointer;}
+  .more-list button:active{background:#F2F1EC;}
+  .more-list button .chev{margin-left:auto;color:var(--muted);}
+
+  /* ---- mobile header ---- */
+  .mobile-head{display:flex !important;margin:-12px -12px 12px;padding:11px 14px;}
+  .mobile-head .mh-brand{font-size:14px;}
+  .mobile-head .mh-week{color:#C6CEDD;}
+
+  .topbar{margin-bottom:13px;gap:8px;}
+  .topbar h1{font-size:20px;}
+  .topbar .sub{font-size:12px;line-height:1.45;color:#5A6373;}
+  .topbar-right{width:100%;}
+
+  /* ---- tables: scroll inside their own box, never stretch the page ---- */
+  .st-scroll, .crm-table-wrap, .heat-wrap, .picks-table-wrap, .predict-table, .results-table{
+    max-width:100%;}
+  .st-scroll, .crm-table-wrap, .heat-wrap, .picks-table-wrap{
+    -webkit-overflow-scrolling:touch;overflow-x:auto;}
+  table.st td, table.st th{padding:6px 7px;font-size:11px;}
+  table.st .sticky2{min-width:118px;}
+  .scroll-hint{display:block;font-size:11px;color:#5A6373;margin:6px 2px 0;font-style:italic;}
+
+  /* ---- stacked layouts ---- */
+  .ov-grid, .grid2, .movers-wrap, .consensus-list, .h2h-wrap{grid-template-columns:1fr;}
+  .stat-grid{grid-template-columns:1fr;}
+  .crm-stats{grid-template-columns:1fr 1fr;}
+  .sc-tiles{grid-template-columns:1fr 1fr 1fr;}
+  .drawer-stats{grid-template-columns:1fr 1fr;}
+  .h2h-mid{flex-direction:row;justify-content:center;gap:14px;padding:12px 0;}
+  .h2h-agree{width:56px;height:56px;}
+
+  .sc-selectrow{flex-direction:column;align-items:stretch;gap:10px;}
+  .sc-select-group select{min-width:0;width:100%;padding:12px 14px;font-size:16px;}
+  .sc-vs-label{display:none;}
+
+  /* ---- results entry: big tap targets ---- */
+  .game-row{grid-template-columns:1fr;gap:7px;padding:12px 13px;}
+  .pickbtn{flex:1;padding:13px 8px;font-size:14px;}
+  .progress-card{gap:11px;padding:14px;}
+
+  /* ---- CRM ---- */
+  table.crm-table th:nth-child(2), table.crm-table td:nth-child(2),
+  table.crm-table th:nth-child(3), table.crm-table td:nth-child(3),
+  table.crm-table th:nth-child(5), table.crm-table td:nth-child(5){display:none;}
+  table.crm-table td{padding:11px 9px;}
+  .crm-toolbar{flex-direction:column;align-items:stretch;}
+  .crm-toolbar input{max-width:none;padding:12px;font-size:16px;}
+  .crm-filters{overflow-x:auto;padding-bottom:3px;}
+  .crm-filter{flex:none;padding:9px 14px;}
+
+  /* ---- drawer: off-canvas without creating page overflow ---- */
+  .drawer{width:100%;max-width:100%;right:0;transform:translateX(101%);transition:transform .24s ease;}
+  .drawer.open{right:0;transform:translateX(0);}
+  .drawer-head{padding:18px 18px 15px;}
+  .drawer-body{padding:14px 15px 40px;}
+  .picks-table-wrap{max-height:none;}
+
+  .weeksel{gap:6px;}
+  .wk-chip{width:42px;height:40px;font-size:13.5px;}
+
+  .modal{width:100%;max-width:100%;border-radius:14px 14px 0 0;position:fixed;bottom:0;max-height:88vh;}
+  .modal-backdrop{align-items:flex-end;}
+
+  .story-card{padding:17px 18px;}
+  .story-card .story-headline{font-size:20px;}
+  .story-card .story-body{font-size:13px;color:#E3E9F2;}
+
+  .results-table{font-size:12px;}
+  .results-table th, .results-table td{padding:8px;}
+  .breakdown-row{grid-template-columns:1fr auto 1fr;font-size:11.5px;gap:6px;}
+
+  /* ---- contrast fixes: muted grey was too light on the cream background ---- */
+  .ov-game .split, .ov-mini-row, .cons-labels, .cons-when, .crm-stat .l,
+  .sc-tile .l, .drawer-stats .ds .l, .stat-card .note, .sc-desc-text,
+  .predict-foot, .card .desc, .rec, .who .tm, .pl-team{color:#59616F;}
+  .game-row .when{color:#59616F;}
+}
+
+@media (max-width:400px){
+  .sc-tiles{grid-template-columns:1fr 1fr;}
+  .crm-stats{grid-template-columns:1fr;}
+  .topbar h1{font-size:18px;}
+  .nav button::before, .more-tab::before{font-size:9px;}
+}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<div class="shell">
+  <div class="side">
+    <div class="brand">
+      <div class="mark">SEC</div>
+      <div class="word">FAMILY<br>PICK'EM<small>MOCKUP &middot; v3</small></div>
+    </div>
+    <div class="nav" id="nav">
+      <button class="active" data-view="overview" data-tier="primary" data-short="Home">&#127968; Overview</button>
+      <button data-view="board" data-tier="primary" data-short="Standings">&#128202; Standings</button>
+      <button data-view="results" data-tier="primary" data-short="Results">&#127942; Results</button>
+      <button data-view="scorecard" data-tier="primary" data-short="Scorecard">&#127183; Scorecard</button>
+      <button data-view="upcoming" data-tier="secondary" data-short="This week">&#128197; This week</button>
+      <button data-view="enter" data-tier="secondary" data-short="Enter">&#9989; Enter results</button>
+      <button data-view="analytics" data-tier="secondary" data-short="Analytics">&#129504; Analytics</button>
+      <button data-view="io" data-tier="secondary" data-short="Players">&#128100; Manage players</button>
+      <button class="more-tab" id="moreTab" data-short="More">&#9776; More</button>
+    </div>
+    <div class="side-foot">
+      <b id="sfPlayers">21 players</b> loaded<br>
+      <span id="sfWeek">Week 1 of 13</span><br>
+      Updated live as you enter results
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="mobile-head">
+      <div class="mh-brand"><span class="mh-mark">SEC</span> Family Pick'em</div>
+      <div class="mh-week" id="mhWeek">Week 1 &middot; 21 players</div>
+    </div>
+
+    <div class="view active" id="view-overview">
+      <div class="topbar">
+        <div><h1>Overview</h1><div class="sub">Everything at a glance &mdash; drill into a tab on the left for the full picture</div></div>
+      </div>
+      <div class="screenshot-target">
+        <div class="ov-grid">
+          <div class="ov-card">
+            <h3>Top of the standings <a data-goto="board">See full table &rarr;</a></h3>
+            <div id="ovStandings"></div>
+          </div>
+          <div class="ov-card">
+            <h3>This week's marquee games <a data-goto="upcoming">See all &rarr;</a></h3>
+            <div id="ovGames"></div>
+          </div>
+        </div>
+        <div class="ov-grid">
+          <div class="ov-card">
+            <h3>Movers this week <a data-goto="board">See trends &rarr;</a></h3>
+            <div id="ovMovers"></div>
+          </div>
+          <div class="ov-card">
+            <h3>Season snapshot <a data-goto="analytics">Full analytics &rarr;</a></h3>
+            <div class="ov-hero-stats" id="ovHero"></div>
+          </div>
+        </div>
+        <div class="ov-grid">
+          <div class="ov-card">
+            <h3>Jump to your scorecard</h3>
+            <p style="font-size:11.5px;color:var(--muted);margin:0 0 10px;">See your stats, or square off against someone.</p>
+            <select id="ovScorecardSelect" style="width:100%;border:1px solid var(--line);border-radius:6px;padding:8px 10px;font-size:12.5px;font-family:inherit;margin-bottom:8px;">
+              <option value="">Select yourself...</option>
+            </select>
+            <button class="btn crimson" id="ovScorecardGo" style="width:100%;">View my scorecard</button>
+          </div>
+          <div class="ov-card">
+            <h3>Needs attention</h3>
+            <div id="ovAttention"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="view" id="view-scorecard">
+      <div class="topbar">
+        <div><h1>Scorecard</h1><div class="sub">Pick yourself for your own stat card, then add an opponent to go head-to-head</div></div>
+      </div>
+      <div class="screenshot-target">
+        <div class="sc-selectrow">
+          <div class="sc-select-group">
+            <label>You</label>
+            <select id="scSelfSelect"><option value="">Select yourself...</option></select>
+          </div>
+          <div class="sc-vs-label">vs</div>
+          <div class="sc-select-group">
+            <label>Opponent (optional)</label>
+            <select id="scOppSelect"><option value="">Select an opponent...</option></select>
+          </div>
+        </div>
+        <div id="scEmpty" class="h2h-empty">Select yourself above to see your scorecard.</div>
+        <div id="scSelfCard"></div>
+        <div id="scH2H"></div>
+      </div>
+    </div>
+
+    <div class="view" id="view-board">
+      <div class="topbar">
+        <div><h1>Standings</h1><div class="sub">Full season at a glance &mdash; rank, record, and every week's movement in one table</div></div>
+      </div>
+      <div class="screenshot-target">
+        <div class="movers-wrap" id="moversWrap"></div>
+        <div class="st-scroll"><table class="st" id="standingsTable"></table></div>
+        <div class="scroll-hint">&#8592; Swipe the table sideways to see every week &middot; rank and name stay pinned</div>
+        <div class="legend">Best rank<div class="swatches" id="stLegendSw"></div>Worst rank</div>
+      </div>
+    </div>
+
+    <div class="view" id="view-upcoming">
+      <div class="topbar">
+        <div><h1>This week</h1><div class="sub">Every matchup with how the family is leaning</div></div>
+      </div>
+      <div class="screenshot-target">
+        <div class="consensus-list" id="consensusList"></div>
+      </div>
+    </div>
+
+    <div class="view" id="view-results">
+      <div class="topbar">
+        <div><h1>Results</h1><div class="sub">Actual outcomes and how the family called them &mdash; browse any past week</div></div>
+      </div>
+      <div class="weeksel" id="resultsWeekSel"></div>
+      <div class="screenshot-target">
+        <div class="section-title">Last week's results</div>
+        <p class="sc-desc-text">&ldquo;Group pick&rdquo; is whichever team the majority of the family picked &mdash; there are no betting lines in this contest, so a <span class="upset-badge">GROUP MISSED</span> tag just means the crowd got that one wrong, not that Vegas did.</p>
+        <table class="results-table" id="resultsTable"></table>
+        <div class="section-title" style="margin-top:20px;">Full pick breakdown <span class="chip">every game, tightest first</span></div>
+        <div class="board" id="breakdownList" style="padding:4px 12px;"></div>
+      </div>
+    </div>
+
+    <div class="view" id="view-enter">
+      <div class="topbar">
+        <div><h1>Enter results</h1><div class="sub">Pick any week &mdash; past ones to fix a mistake, the current one once that week's games are all final</div></div>
+      </div>
+      <div class="weeksel" id="enterWeekSel"></div>
+      <div class="progress-card">
+        <div><div class="lbl">Games entered</div><div class="big" id="progLabel">9 / 13</div></div>
+        <div class="bar-track"><div class="bar-fill" id="progBar" style="width:69%"></div></div>
+        <div class="autosave"><span class="dot"></span>Standings update live as you click</div>
+      </div>
+      <div class="game-list" id="gameList"></div>
+      <div class="download-card">
+        <div class="download-card-text">
+          <b>Done for this week?</b> Nothing is saved to the actual site file until you download it &mdash;
+          this only lives in your browser until then. Download, then replace <code>index.html</code>
+          in your GitHub repo with this file.
+        </div>
+        <button class="btn crimson" id="downloadSiteBtn">&#8681; Download updated site</button>
+      </div>
+    </div>
+
+    <div class="view" id="view-analytics">
+      <div class="topbar">
+        <div><h1>Analytics</h1><div class="sub">Season-long insight from everyone's picks &mdash; this is a pick-once contest, so most of this is fixed once submissions close</div></div>
+      </div>
+      <div class="screenshot-target">
+        <div class="story-card" id="storyCard"></div>
+        <div class="stat-grid" id="statGrid"></div>
+
+        <div class="section-title">Best week this season <span class="chip">highest points scored in a single week</span></div>
+        <p class="sc-desc-text">Results land as a full week's batch, not one game at a time, so a play-by-play streak isn't something anyone actually experiences. This tracks each person's single best week instead &mdash; the week they got the most picks right.</p>
+        <div class="rank-list" id="streakList"></div>
+
+        <div class="section-title">Cumulative group predictions <span class="chip">season &middot; locked at pick time</span></div>
+        <table class="predict-table" id="predictTable"></table>
+        <div class="predict-foot" id="predictFoot"></div>
+
+        <div class="section-title">Ten closest splits of the season <span class="chip">season &middot; locked at pick time</span></div>
+        <div class="board" id="closestSplits" style="padding:2px 12px;"></div>
+
+        <div class="section-title">Homer index <span class="chip">season &middot; locked at pick time</span></div>
+        <p class="sc-desc-text">How often someone picks their own favorite team to win, out of every game that team plays &mdash; whether or not that team was actually favored. High number means loyalty over logic.</p>
+        <div class="rank-list" id="homerList"></div>
+      </div>
+    </div>
+
+    <div class="view" id="view-io">
+      <div class="topbar">
+        <div><h1>Manage players</h1><div class="sub">Every submission, one screen &mdash; search, drill into anyone, edit picks game by game</div></div>
+        <div class="topbar-right">
+          <button class="btn ghost" id="exportBtn">&#8681; Export full dataset</button>
+          <button class="btn crimson" id="importBtn">+ Import submission</button>
+        </div>
+      </div>
+
+      <div class="crm-stats">
+        <div class="crm-stat"><div class="n" id="crmTotalPlayers"></div><div class="l">Players</div></div>
+        <div class="crm-stat"><div class="n" id="crmAvgComplete"></div><div class="l">Avg. picks complete</div></div>
+        <div class="crm-stat warn"><div class="n" id="crmIncomplete"></div><div class="l">Incomplete submissions</div></div>
+        <div class="crm-stat"><div class="n" id="crmLastImport"></div><div class="l">Last import</div></div>
+      </div>
+
+      <div class="crm-toolbar">
+        <input id="crmSearch" placeholder="Search by name or team...">
+        <div class="crm-filters" id="crmFilters">
+          <button class="crm-filter active" data-f="all">All</button>
+          <button class="crm-filter" data-f="incomplete">Incomplete picks</button>
+          <button class="crm-filter" data-f="auburn">Auburn fans</button>
+        </div>
+      </div>
+
+      <div class="crm-table-wrap">
+        <table class="crm-table" id="crmTable"></table>
+      </div>
+    </div>
+
+    <!-- Player detail drawer -->
+    <div class="drawer-backdrop" id="drawerBackdrop"></div>
+    <div class="drawer" id="playerDrawer">
+      <div class="drawer-head">
+        <button class="drawer-close" id="drawerClose">&times;</button>
+        <div class="drawer-profile" id="drawerProfile"></div>
+      </div>
+      <div class="drawer-stats" id="drawerStats"></div>
+      <div class="drawer-body">
+        <div id="editFormHost"></div>
+        <div class="drawer-picks-head">
+          <h3>Game-by-game picks <span id="picksCount" style="color:var(--muted);font-weight:400;font-size:11px;"></span></h3>
+          <input id="picksSearch" placeholder="Filter games...">
+        </div>
+        <div class="drawer-save-note"><span class="dot"></span>Changes save automatically</div>
+        <div class="picks-table-wrap"><table class="picks-table" id="picksTable"></table></div>
+      </div>
+    </div>
+
+    <!-- Import modal -->
+    <div class="modal-backdrop" id="importBackdrop">
+      <div class="modal">
+        <div class="modal-head"><h3>Import a submission</h3><button class="drawer-close" id="importClose">&times;</button></div>
+        <div class="modal-body" id="importBody"></div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<div class="more-backdrop" id="moreBackdrop"></div>
+<div class="more-sheet" id="moreSheet">
+  <div class="more-grip"></div>
+  <div class="more-title">More</div>
+  <div class="more-list" id="moreList"></div>
+</div>
+
+<script>
+const SEASON = {"games":[{"week":1,"when":"2026-09-03","a":"Arkansas-Pine Bluff","b":"Missouri","favorite":"Missouri","winner":"Missouri","score":"54-14"},{"week":1,"when":"2026-09-05","a":"East Carolina","b":"Alabama","favorite":"Alabama","winner":"Alabama","score":"48-10"},{"week":1,"when":"2026-09-05","a":"North Alabama","b":"Arkansas","favorite":"Arkansas","winner":"Arkansas","score":"31-14"},{"week":1,"when":"2026-09-05","a":"Baylor","b":"Auburn","favorite":"Auburn","winner":"Auburn","score":"17-16"},{"week":1,"when":"2026-09-05","a":"Florida Atlantic","b":"Florida","favorite":"Florida","winner":"Florida","score":"66-21"},{"week":1,"when":"2026-09-05","a":"Tennessee State","b":"Georgia","favorite":"Georgia","winner":"Georgia","score":"63-3"},{"week":1,"when":"2026-09-05","a":"Youngstown State","b":"Kentucky","favorite":"Kentucky","winner":"Kentucky","score":"45-13"},{"week":1,"when":"2026-09-05","a":"Clemson","b":"LSU","favorite":"LSU","winner":"LSU","score":"51-10"},{"week":1,"when":"2026-09-05","a":"UL-Monroe","b":"Miss State","favorite":"Miss State","winner":null,"score":null},{"week":1,"when":"2026-09-05","a":"UTEP","b":"Oklahoma","favorite":"Oklahoma","winner":"Oklahoma","score":"51-0"},{"week":1,"when":"2026-09-05","a":"Kent State","b":"South Carolina","favorite":"South Carolina","winner":null,"score":null},{"week":1,"when":"2026-09-05","a":"Furman","b":"Tennessee","favorite":"Tennessee","winner":null,"score":null},{"week":1,"when":"2026-09-05","a":"Texas State","b":"Texas","favorite":"Texas","winner":null,"score":null},{"week":1,"when":"2026-09-05","a":"Missouri State","b":"Texas A&M","favorite":"Texas A&M","winner":null,"score":null},{"week":1,"when":"2026-09-05","a":"Austin Peay","b":"Vanderbilt","favorite":"Vanderbilt","winner":null,"score":null},{"week":1,"when":"2026-09-06","a":"Ole Miss","b":"Louisville","favorite":"Ole Miss","winner":"Ole Miss","score":"41-38"},{"week":2,"when":"2026-09-11","a":"Missouri","b":"Kansas","favorite":"Missouri","winner":null,"score":null},{"week":2,"when":"2026-09-12","a":"Alabama","b":"Kentucky","favorite":"Alabama","winner":null,"score":null},{"week":2,"when":"2026-09-12","a":"Arkansas","b":"Utah","favorite":"Utah","winner":null,"score":null},{"week":2,"when":"2026-09-12","a":"Southern Miss","b":"Auburn","favorite":"Auburn","winner":null,"score":null},{"week":2,"when":"2026-09-12","a":"Campbell","b":"Florida","favorite":"Florida","winner":null,"score":null},{"week":2,"when":"2026-09-12","a":"Western Kentucky","b":"Georgia","favorite":"Georgia","winner":null,"score":null},{"week":2,"when":"2026-09-12","a":"Louisiana Tech","b":"LSU","favorite":"LSU","winner":null,"score":null},{"week":2,"when":"2026-09-12","a":"Miss State","b":"Minnesota","favorite":"Miss State","winner":null,"score":null},{"week":2,"when":"2026-09-12","a":"Oklahoma","b":"Michigan","favorite":"Michigan","winner":null,"score":null},{"week":2,"when":"2026-09-12","a":"Charlotte","b":"Ole Miss","favorite":"Ole Miss","winner":null,"score":null},{"week":2,"when":"2026-09-12","a":"Towson","b":"South Carolina","favorite":"South Carolina","winner":null,"score":null},{"week":2,"when":"2026-09-12","a":"Tennessee","b":"Georgia Tech","favorite":"Tennessee","winner":null,"score":null},{"week":2,"when":"2026-09-12","a":"Ohio State","b":"Texas","favorite":"Ohio State","winner":null,"score":null},{"week":2,"when":"2026-09-12","a":"Arizona State","b":"Texas A&M","favorite":"Texas A&M","winner":null,"score":null},{"week":2,"when":"2026-09-12","a":"Delaware","b":"Vanderbilt","favorite":"Vanderbilt","winner":null,"score":null},{"week":3,"when":"2026-09-19","a":"Florida State","b":"Alabama","favorite":"Alabama","winner":null,"score":null},{"week":3,"when":"2026-09-19","a":"Georgia","b":"Arkansas","favorite":"Georgia","winner":null,"score":null},{"week":3,"when":"2026-09-19","a":"Florida","b":"Auburn","favorite":"Auburn","winner":null,"score":null},{"week":3,"when":"2026-09-19","a":"Kentucky","b":"Texas A&M","favorite":"Texas A&M","winner":null,"score":null},{"week":3,"when":"2026-09-19","a":"LSU","b":"Ole Miss","favorite":"Ole Miss","winner":null,"score":null},{"week":3,"when":"2026-09-19","a":"Miss State","b":"South Carolina","favorite":"South Carolina","winner":null,"score":null},{"week":3,"when":"2026-09-19","a":"Troy","b":"Missouri","favorite":"Missouri","winner":null,"score":null},{"week":3,"when":"2026-09-19","a":"New Mexico","b":"Oklahoma","favorite":"Oklahoma","winner":null,"score":null},{"week":3,"when":"2026-09-19","a":"Kennesaw State","b":"Tennessee","favorite":"Tennessee","winner":null,"score":null},{"week":3,"when":"2026-09-19","a":"UTSA","b":"Texas","favorite":"Texas","winner":null,"score":null},{"week":3,"when":"2026-09-19","a":"NC State","b":"Vanderbilt","favorite":"Vanderbilt","winner":null,"score":null},{"week":4,"when":"2026-09-26","a":"South Carolina","b":"Alabama","favorite":"Alabama","winner":null,"score":null},{"week":4,"when":"2026-09-26","a":"Tulsa","b":"Arkansas","favorite":"Arkansas","winner":null,"score":null},{"week":4,"when":"2026-09-26","a":"Vanderbilt","b":"Auburn","favorite":"Auburn","winner":null,"score":null},{"week":4,"when":"2026-09-26","a":"Ole Miss","b":"Florida","favorite":"Ole Miss","winner":null,"score":null},{"week":4,"when":"2026-09-26","a":"Oklahoma","b":"Georgia","favorite":"Georgia","winner":null,"score":null},{"week":4,"when":"2026-09-26","a":"South Alabama","b":"Kentucky","favorite":"Kentucky","winner":null,"score":null},{"week":4,"when":"2026-09-26","a":"Texas A&M","b":"LSU","favorite":"LSU","winner":null,"score":null},{"week":4,"when":"2026-09-26","a":"Missouri","b":"Miss State","favorite":"Missouri","winner":null,"score":null},{"week":4,"when":"2026-09-26","a":"Texas","b":"Tennessee","favorite":"Texas","winner":null,"score":null},{"week":5,"when":"2026-10-03","a":"Alabama","b":"Miss State","favorite":"Alabama","winner":null,"score":null},{"week":5,"when":"2026-10-03","a":"Arkansas","b":"Texas A&M","favorite":"Texas A&M","winner":null,"score":null},{"week":5,"when":"2026-10-03","a":"Auburn","b":"Tennessee","favorite":"Tennessee","winner":null,"score":null},{"week":5,"when":"2026-10-03","a":"Florida","b":"Missouri","favorite":"Missouri","winner":null,"score":null},{"week":5,"when":"2026-10-03","a":"Vanderbilt","b":"Georgia","favorite":"Georgia","winner":null,"score":null},{"week":5,"when":"2026-10-03","a":"Kentucky","b":"South Carolina","favorite":"South Carolina","winner":null,"score":null},{"week":5,"when":"2026-10-03","a":"McNeese State","b":"LSU","favorite":"LSU","winner":null,"score":null},{"week":6,"when":"2026-10-10","a":"Georgia","b":"Alabama","favorite":"Georgia","winner":null,"score":null},{"week":6,"when":"2026-10-10","a":"Tennessee","b":"Arkansas","favorite":"Tennessee","winner":null,"score":null},{"week":6,"when":"2026-10-10","a":"South Carolina","b":"Florida","favorite":"Florida","winner":null,"score":null},{"week":6,"when":"2026-10-10","a":"LSU","b":"Kentucky","favorite":"LSU","winner":null,"score":null},{"week":6,"when":"2026-10-10","a":"Texas A&M","b":"Missouri","favorite":"Texas A&M","winner":null,"score":null},{"week":6,"when":"2026-10-10","a":"Texas","b":"Oklahoma","favorite":"Texas","winner":null,"score":null},{"week":6,"when":"2026-10-10","a":"Ole Miss","b":"Vanderbilt","favorite":"Ole Miss","winner":null,"score":null},{"week":7,"when":"2026-10-17","a":"Alabama","b":"Tennessee","favorite":"Tennessee","winner":null,"score":null},{"week":7,"when":"2026-10-17","a":"Arkansas","b":"Vanderbilt","favorite":"Vanderbilt","winner":null,"score":null},{"week":7,"when":"2026-10-17","a":"Auburn","b":"Georgia","favorite":"Georgia","winner":null,"score":null},{"week":7,"when":"2026-10-17","a":"Florida","b":"Texas","favorite":"Texas","winner":null,"score":null},{"week":7,"when":"2026-10-17","a":"Kentucky","b":"Oklahoma","favorite":"Oklahoma","winner":null,"score":null},{"week":7,"when":"2026-10-17","a":"Miss State","b":"LSU","favorite":"LSU","winner":null,"score":null},{"week":7,"when":"2026-10-17","a":"Missouri","b":"Ole Miss","favorite":"Ole Miss","winner":null,"score":null},{"week":7,"when":"2026-10-17","a":"The Citadel","b":"Texas A&M","favorite":"Texas A&M","winner":null,"score":null},{"week":8,"when":"2026-10-24","a":"Texas A&M","b":"Alabama","favorite":"Alabama","winner":null,"score":null},{"week":8,"when":"2026-10-24","a":"LSU","b":"Auburn","favorite":"Auburn","winner":null,"score":null},{"week":8,"when":"2026-10-24","a":"Vanderbilt","b":"Kentucky","favorite":"Kentucky","winner":null,"score":null},{"week":8,"when":"2026-10-24","a":"Oklahoma","b":"Miss State","favorite":"Oklahoma","winner":null,"score":null},{"week":8,"when":"2026-10-24","a":"Ole Miss","b":"Texas","favorite":"Texas","winner":null,"score":null},{"week":8,"when":"2026-10-24","a":"Tennessee","b":"South Carolina","favorite":"Tennessee","winner":null,"score":null},{"week":9,"when":"2026-10-31","a":"Missouri","b":"Arkansas","favorite":"Missouri","winner":null,"score":null},{"week":9,"when":"2026-10-31","a":"Auburn","b":"Ole Miss","favorite":"Ole Miss","winner":null,"score":null},{"week":9,"when":"2026-10-31","a":"Georgia","b":"Florida","favorite":"Georgia","winner":null,"score":null},{"week":9,"when":"2026-10-31","a":"Miss State","b":"Texas","favorite":"Texas","winner":null,"score":null},{"week":9,"when":"2026-10-31","a":"South Carolina","b":"Oklahoma","favorite":"Oklahoma","winner":null,"score":null},{"week":10,"when":"2026-11-07","a":"Alabama","b":"LSU","favorite":"LSU","winner":null,"score":null},{"week":10,"when":"2026-11-07","a":"Arkansas","b":"Auburn","favorite":"Auburn","winner":null,"score":null},{"week":10,"when":"2026-11-07","a":"Oklahoma","b":"Florida","favorite":"Oklahoma","winner":null,"score":null},{"week":10,"when":"2026-11-07","a":"Georgia","b":"Ole Miss","favorite":"Ole Miss","winner":null,"score":null},{"week":10,"when":"2026-11-07","a":"Kentucky","b":"Tennessee","favorite":"Tennessee","winner":null,"score":null},{"week":10,"when":"2026-11-07","a":"Vanderbilt","b":"Miss State","favorite":"Miss State","winner":null,"score":null},{"week":10,"when":"2026-11-07","a":"Texas","b":"Missouri","favorite":"Texas","winner":null,"score":null},{"week":10,"when":"2026-11-07","a":"Texas A&M","b":"South Carolina","favorite":"Texas A&M","winner":null,"score":null},{"week":11,"when":"2026-11-14","a":"Alabama","b":"Vanderbilt","favorite":"Alabama","winner":null,"score":null},{"week":11,"when":"2026-11-14","a":"South Carolina","b":"Arkansas","favorite":"Arkansas","winner":null,"score":null},{"week":11,"when":"2026-11-14","a":"Auburn","b":"Miss State","favorite":"Auburn","winner":null,"score":null},{"week":11,"when":"2026-11-14","a":"Florida","b":"Kentucky","favorite":"Florida","winner":null,"score":null},{"week":11,"when":"2026-11-14","a":"Missouri","b":"Georgia","favorite":"Georgia","winner":null,"score":null},{"week":11,"when":"2026-11-14","a":"Texas","b":"LSU","favorite":"Texas","winner":null,"score":null},{"week":11,"when":"2026-11-14","a":"Ole Miss","b":"Oklahoma","favorite":"Ole Miss","winner":null,"score":null},{"week":11,"when":"2026-11-14","a":"Tennessee","b":"Texas A&M","favorite":"Texas A&M","winner":null,"score":null},{"week":12,"when":"2026-11-21","a":"UT-Chattanooga","b":"Alabama","favorite":"Alabama","winner":null,"score":null},{"week":12,"when":"2026-11-21","a":"Arkansas","b":"Texas","favorite":"Texas","winner":null,"score":null},{"week":12,"when":"2026-11-21","a":"Samford","b":"Auburn","favorite":"Auburn","winner":null,"score":null},{"week":12,"when":"2026-11-21","a":"Vanderbilt","b":"Florida","favorite":"Florida","winner":null,"score":null},{"week":12,"when":"2026-11-21","a":"Georgia","b":"South Carolina","favorite":"Georgia","winner":null,"score":null},{"week":12,"when":"2026-11-21","a":"Kentucky","b":"Missouri","favorite":"Missouri","winner":null,"score":null},{"week":12,"when":"2026-11-21","a":"LSU","b":"Tennessee","favorite":"Tennessee","winner":null,"score":null},{"week":12,"when":"2026-11-21","a":"Tennessee Tech","b":"Miss State","favorite":"Miss State","winner":null,"score":null},{"week":12,"when":"2026-11-21","a":"Texas A&M","b":"Oklahoma","favorite":"Texas A&M","winner":null,"score":null},{"week":12,"when":"2026-11-21","a":"Wofford","b":"Ole Miss","favorite":"Ole Miss","winner":null,"score":null},{"week":13,"when":"2026-11-27","a":"Florida","b":"Florida State","favorite":"Florida","winner":null,"score":null},{"week":13,"when":"2026-11-27","a":"Miss State","b":"Ole Miss","favorite":"Ole Miss","winner":null,"score":null},{"week":13,"when":"2026-11-27","a":"Texas","b":"Texas A&M","favorite":"Texas A&M","winner":null,"score":null},{"week":13,"when":"2026-11-28","a":"Auburn","b":"Alabama","favorite":"Auburn","winner":null,"score":null},{"week":13,"when":"2026-11-28","a":"LSU","b":"Arkansas","favorite":"LSU","winner":null,"score":null},{"week":13,"when":"2026-11-28","a":"Georgia Tech","b":"Georgia","favorite":"Georgia","winner":null,"score":null},{"week":13,"when":"2026-11-28","a":"Louisville","b":"Kentucky","favorite":"Kentucky","winner":null,"score":null},{"week":13,"when":"2026-11-28","a":"Oklahoma","b":"Missouri","favorite":"Oklahoma","winner":null,"score":null},{"week":13,"when":"2026-11-28","a":"South Carolina","b":"Clemson","favorite":"Clemson","winner":null,"score":null},{"week":13,"when":"2026-11-28","a":"Tennessee","b":"Vanderbilt","favorite":"Tennessee","winner":null,"score":null}],"roster":[{"name":"Bill (Auburn)","team":"Auburn"},{"name":"Rusty (Auburn)","team":"Auburn"},{"name":"Scott Palmer (Auburn)","team":"Auburn"},{"name":"Nate Palmer (Thunderbirds)","team":"Thunderbirds"},{"name":"Andrew McCain (Auburn)","team":"Auburn"},{"name":"Watford (Auburn)","team":"Auburn"},{"name":"Madison Palmer (Georgia Tech) (yuck)","team":"Georgia Tech"},{"name":"Will Palmer (Auburn)","team":"Auburn"},{"name":"Tom White (Auburn)","team":"Auburn"},{"name":"Abbie Palmer (Auburn)","team":"Auburn"},{"name":"Brandon Odom (Auburn)","team":"Auburn"},{"name":"Ellie Odom (Auburn)","team":"Auburn"},{"name":"Judson Odom (Auburn)","team":"Auburn"},{"name":"Kyle McCain (Auburn)","team":"Auburn"},{"name":"Millie Palmer (Auburn)","team":"Auburn"},{"name":"Tucker Odom (Auburn)","team":"Auburn"},{"name":"Matt Watford (Auburn)","team":"Auburn"},{"name":"Mattie Palmer (Auburn)","team":"Auburn"},{"name":"Daddy Butch (Auburn)","team":"Auburn"},{"name":"Cameron Watford (Auburn)","team":"Auburn"},{"name":"Rylin Watford (Auburn)","team":"Auburn"}],"champ":{"Bill (Auburn)":"Georgia","Rusty (Auburn)":"Georgia","Scott Palmer (Auburn)":"Georgia","Nate Palmer (Thunderbirds)":"Texas","Andrew McCain (Auburn)":"Auburn","Watford (Auburn)":"Georgia","Madison Palmer (Georgia Tech) (yuck)":"Georgia","Will Palmer (Auburn)":"Georgia","Tom White (Auburn)":"Auburn","Abbie Palmer (Auburn)":"Georgia","Brandon Odom (Auburn)":"Texas A&M","Ellie Odom (Auburn)":"Ole Miss","Judson Odom (Auburn)":"Texas","Kyle McCain (Auburn)":"Texas A&M","Millie Palmer (Auburn)":"Georgia","Tucker Odom (Auburn)":"Georgia","Matt Watford (Auburn)":"Auburn","Mattie Palmer (Auburn)":"Georgia","Daddy Butch (Auburn)":"Texas A&M","Cameron Watford (Auburn)":"Texas","Rylin Watford (Auburn)":"Texas"},"picks":{"Bill (Auburn)":["Missouri","Alabama","Arkansas","Auburn","Florida","Georgia","Kentucky","LSU","Miss State","Oklahoma","South Carolina","Tennessee","Texas","Texas A&M","Vanderbilt","Ole Miss","Missouri","Alabama","Utah","Auburn","Florida","Georgia","LSU","Minnesota","Michigan","Ole Miss","South Carolina","Tennessee","Texas","Texas A&M","Vanderbilt","Alabama","Georgia","Auburn","Texas A&M","Ole Miss","South Carolina","Missouri","Oklahoma","Tennessee","Texas","Vanderbilt","Alabama","Arkansas","Auburn","Ole Miss","Georgia","Kentucky","LSU","Missouri","Texas","Alabama","Texas A&M","Tennessee","Missouri","Georgia","South Carolina","LSU","Georgia","Tennessee","Florida","LSU","Texas A&M","Texas","Ole Miss","Tennessee","Arkansas","Georgia","Texas","Oklahoma","LSU","Ole Miss","Texas A&M","Alabama","Auburn","Vanderbilt","Oklahoma","Texas","Tennessee","Missouri","Ole Miss","Georgia","Texas","Oklahoma","LSU","Auburn","Oklahoma","Georgia","Tennessee","Miss State","Texas","Texas A&M","Alabama","South Carolina","Auburn","Florida","Georgia","LSU","Oklahoma","Texas A&M","Alabama","Texas","Auburn","Florida","Georgia","Missouri","Tennessee","Tennessee Tech","Oklahoma","Ole Miss","Florida State","Ole Miss","Texas A&M","Auburn","LSU","Georgia","Kentucky","Oklahoma","Clemson","Tennessee"],"Rusty (Auburn)":["Missouri","Alabama","Arkansas","Auburn","Florida","Georgia","Kentucky","LSU","Miss State","Oklahoma","South Carolina","Tennessee","Texas","Texas A&M","Vanderbilt","Ole Miss","Missouri","Alabama","Utah","Auburn","Florida","Georgia","LSU","Minnesota","Michigan","Ole Miss","South Carolina","Tennessee","Ohio State","Texas A&M","Vanderbilt","Alabama","Georgia","Auburn","Texas A&M","LSU","South Carolina","Missouri","Oklahoma","Tennessee","Texas","Vanderbilt","Alabama","Arkansas","Auburn","Florida","Georgia","Kentucky","LSU","Missouri","Texas","Alabama","Texas A&M","Auburn","Missouri","Georgia","South Carolina","LSU","Georgia","Tennessee","Florida","LSU","Texas A&M","Texas","Vanderbilt","Alabama","Vanderbilt","Georgia","Texas","Oklahoma","LSU","Ole Miss","Texas A&M","Alabama","LSU","Vanderbilt","Oklahoma","Texas","Tennessee","Missouri","Ole Miss","Georgia","Texas","Oklahoma","Alabama","Auburn","Florida","Ole Miss","Tennessee","Vanderbilt","Texas","Texas A&M","Vanderbilt","South Carolina","Auburn","Florida","Georgia","LSU","Oklahoma","Texas A&M","Alabama","Texas","Auburn","Vanderbilt","Georgia","Missouri","Tennessee","Miss State","Oklahoma","Ole Miss","Florida","Ole Miss","Texas","Alabama","LSU","Georgia","Louisville","Oklahoma","Clemson","Tennessee"],"Scott Palmer (Auburn)":["Missouri","Alabama","Arkansas","Auburn","Florida","Georgia","Kentucky","Clemson","Miss State","Oklahoma","South Carolina","Tennessee","Texas","Texas A&M","Vanderbilt","Louisville","Kansas","Alabama","Arkansas","Auburn","Florida","Georgia","LSU","Minnesota","Michigan","Ole Miss","South Carolina","Georgia Tech","Texas","Texas A&M","Vanderbilt","Alabama","Georgia","Auburn","Texas A&M","LSU","South Carolina","Missouri","Oklahoma","Tennessee","Texas","NC State","Alabama","Arkansas","Auburn","Florida","Georgia","Kentucky","LSU","Missouri","Tennessee","Alabama","Texas A&M","Tennessee","Missouri","Georgia","South Carolina","LSU","Georgia","Tennessee","South Carolina","LSU","Missouri","Texas","Ole Miss","Tennessee","Arkansas","Georgia","Texas","Oklahoma","LSU","Ole Miss","Texas A&M","Texas A&M","LSU","Kentucky","Oklahoma","Texas","Tennessee","Missouri","Auburn","Georgia","Texas","Oklahoma","LSU","Auburn","Oklahoma","Georgia","Tennessee","Miss State","Missouri","Texas A&M","Alabama","Arkansas","Auburn","Florida","Georgia","LSU","Oklahoma","Texas A&M","Alabama","Texas","Auburn","Florida","Georgia","Missouri","LSU","Miss State","Texas A&M","Ole Miss","Florida","Ole Miss","Texas A&M","Auburn","LSU","Georgia","Kentucky","Missouri","Clemson","Tennessee"],"Nate Palmer (Thunderbirds)":["Missouri","Alabama","Arkansas","Auburn","Florida","Georgia","Kentucky","LSU","Miss State","Oklahoma","South Carolina","Tennessee","Texas","Texas A&M","Vanderbilt","Ole Miss","Missouri","Alabama","Utah","Auburn","Florida","Georgia","LSU","Miss State","Oklahoma","Ole Miss","South Carolina","Tennessee","Texas","Texas A&M","Vanderbilt","Alabama","Georgia","Auburn","Texas A&M","Ole Miss","South Carolina","Missouri","Oklahoma","Tennessee","Texas","Vanderbilt","Alabama","Arkansas","Auburn","Ole Miss","Georgia","Kentucky","LSU","Miss State","Texas","Alabama","Texas A&M","Auburn","Florida","Georgia","South Carolina","LSU","Georgia","Tennessee","Florida","LSU","Texas A&M","Oklahoma","Ole Miss","Tennessee","Arkansas","Auburn","Texas","Oklahoma","LSU","Ole Miss","Texas A&M","Alabama","LSU","Vanderbilt","Oklahoma","Texas","Tennessee","Missouri","Ole Miss","Georgia","Texas","Oklahoma","LSU","Auburn","Florida","Ole Miss","Tennessee","Vanderbilt","Texas","Texas A&M","Alabama","Arkansas","Auburn","Florida","Georgia","Texas","Ole Miss","Tennessee","Alabama","Texas","Auburn","Florida","Georgia","Missouri","LSU","Miss State","Texas A&M","Ole Miss","Florida State","Ole Miss","Texas A&M","Auburn","LSU","Georgia","Louisville","Oklahoma","Clemson","Tennessee"],"Andrew McCain (Auburn)":["Missouri","Alabama","Arkansas","Auburn","Florida","Georgia","Kentucky","LSU","Miss State","Oklahoma","South Carolina","Tennessee","Texas","Texas A&M","Vanderbilt","Louisville","Kansas","Alabama","Utah","Auburn","Florida","Georgia","LSU","Miss State","Michigan","Ole Miss","South Carolina","Tennessee","Ohio State","Texas A&M","Vanderbilt","Alabama","Georgia","Auburn","Texas A&M","Ole Miss","South Carolina","Missouri","Oklahoma","Tennessee","Texas","NC State","Alabama","Arkansas","Auburn","Ole Miss","Georgia","Kentucky","LSU","Missouri","Texas","Alabama","Texas A&M","Tennessee","Missouri","Georgia","South Carolina","LSU","Georgia","Tennessee","Florida","LSU","Texas A&M","Oklahoma","Ole Miss","Tennessee","Vanderbilt","Georgia","Texas","Oklahoma","LSU","Ole Miss","Texas A&M","Alabama","Auburn","Kentucky","Oklahoma","Texas","Tennessee","Missouri","Auburn","Georgia","Texas","Oklahoma","LSU","Auburn","Oklahoma","Ole Miss","Tennessee","Miss State","Missouri","Texas A&M","Alabama","South Carolina","Auburn","Florida","Georgia","LSU","Ole Miss","Texas A&M","Alabama","Texas","Auburn","Florida","Georgia","Missouri","Tennessee","Miss State","Oklahoma","Ole Miss","Florida State","Ole Miss",null,"Auburn","LSU","Georgia","Louisville","Oklahoma","Clemson","Vanderbilt"],"Watford (Auburn)":["Missouri","Alabama","Arkansas","Auburn","Florida","Georgia","Kentucky","LSU","Miss State","Oklahoma","South Carolina","Tennessee","Texas","Texas A&M","Vanderbilt","Ole Miss","Missouri","Alabama","Utah","Auburn","Florida","Georgia","LSU","Minnesota","Michigan","Ole Miss","South Carolina","Tennessee","Texas","Texas A&M","Vanderbilt","Alabama","Georgia","Auburn","Texas A&M","Ole Miss","South Carolina","Missouri","Oklahoma","Tennessee","Texas","Vanderbilt","Alabama","Arkansas","Auburn","Ole Miss","Georgia","Kentucky","LSU","Miss State","Texas","Alabama","Texas A&M","Auburn","Missouri","Georgia","South Carolina","LSU","Georgia","Tennessee","Florida","LSU","Texas A&M","Texas","Ole Miss","Alabama","Vanderbilt","Georgia","Texas","Oklahoma","LSU","Ole Miss","Texas A&M","Alabama","LSU","Kentucky","Oklahoma","Texas","Tennessee","Arkansas","Ole Miss","Georgia","Texas","Oklahoma","LSU","Auburn","Oklahoma","Ole Miss","Tennessee","Vanderbilt","Texas","Texas A&M","Alabama","South Carolina","Auburn","Florida","Georgia","Texas","Oklahoma","Texas A&M","Alabama","Texas","Auburn","Florida","Georgia","Missouri","Tennessee","Miss State","Oklahoma","Ole Miss","Florida","Ole Miss","Texas A&M","Auburn","LSU","Georgia","Kentucky","Oklahoma","South Carolina","Tennessee"],"Madison Palmer (Georgia Tech) (yuck)":["Missouri","Alabama","Arkansas","Auburn","Florida","Georgia","Kentucky","LSU","Miss State","Oklahoma","South Carolina","Tennessee","Texas","Texas A&M","Vanderbilt","Ole Miss","Kansas","Alabama","Utah","Auburn","Florida","Georgia","LSU","Minnesota","Michigan","Ole Miss","South Carolina","Georgia Tech","Ohio State","Arizona State","Vanderbilt","Florida State","Georgia","Florida","Texas A&M","Ole Miss","South Carolina","Missouri","Oklahoma","Tennessee","Texas","NC State","Alabama","Tulsa","Auburn","Ole Miss","Georgia","Kentucky","LSU","Miss State","Texas","Alabama","Texas A&M","Tennessee","Missouri","Georgia","South Carolina","LSU","Georgia","Tennessee","Florida","LSU","Texas A&M","Texas","Ole Miss","Tennessee","Vanderbilt","Georgia","Texas","Oklahoma","LSU","Ole Miss","Texas A&M","Alabama","LSU","Vanderbilt","Oklahoma","Texas","Tennessee","Arkansas","Ole Miss","Georgia","Texas","Oklahoma","LSU","Auburn","Oklahoma","Ole Miss","Tennessee","Vanderbilt","Texas","Texas A&M","Alabama","South Carolina","Miss State","Florida","Georgia","Texas","Ole Miss","Texas A&M","Alabama","Texas","Auburn","Vanderbilt","Georgia","Missouri","Tennessee","Miss State","Texas A&M","Ole Miss","Florida State","Ole Miss","Texas A&M","Alabama","LSU","Georgia","Kentucky","Oklahoma","Clemson","Vanderbilt"],"Will Palmer (Auburn)":["Missouri","Alabama","Arkansas","Auburn","Florida","Georgia","Kentucky","LSU","Miss State","Oklahoma","South Carolina","Tennessee","Texas","Texas A&M","Vanderbilt","Ole Miss","Missouri","Alabama","Utah","Auburn","Florida","Georgia","LSU","Minnesota","Michigan","Ole Miss","South Carolina","Tennessee","Texas","Texas A&M","Vanderbilt","Alabama","Georgia","Auburn","Texas A&M","Ole Miss","South Carolina","Missouri","Oklahoma","Tennessee","Texas","NC State","Alabama","Arkansas","Auburn","Ole Miss","Georgia","Kentucky","LSU","Missouri","Texas","Alabama","Texas A&M","Tennessee","Missouri","Georgia","South Carolina","LSU","Alabama","Tennessee","Florida","LSU","Texas A&M","Texas","Ole Miss","Alabama","Vanderbilt","Georgia","Texas","Oklahoma","LSU","Ole Miss","Texas A&M","Texas A&M","LSU","Vanderbilt","Oklahoma","Texas","Tennessee","Missouri","Ole Miss","Georgia","Texas","Oklahoma","Alabama","Auburn","Oklahoma","Georgia","Tennessee","Miss State","Texas","Texas A&M","Alabama","South Carolina","Auburn","Florida","Georgia","LSU","Oklahoma","Texas A&M","Alabama","Texas","Auburn","Florida","Georgia","Missouri","Tennessee","Miss State","Texas A&M","Ole Miss","Florida State","Ole Miss","Texas A&M","Auburn","LSU","Georgia","Louisville","Oklahoma","Clemson","Tennessee"],"Tom White (Auburn)":["Missouri","Alabama","Arkansas","Auburn","Florida","Georgia","Kentucky","LSU","Miss State","Oklahoma","South Carolina","Tennessee","Texas","Texas A&M","Vanderbilt","Ole Miss","Missouri","Alabama","Utah","Auburn","Florida","Georgia","LSU","Minnesota","Michigan","Ole Miss","South Carolina","Tennessee","Ohio State","Texas A&M","Vanderbilt","Alabama","Georgia","Auburn","Texas A&M","Ole Miss","South Carolina","Missouri","Oklahoma","Tennessee","Texas","Vanderbilt","Alabama","Arkansas","Auburn","Ole Miss","Georgia","Kentucky","LSU","Missouri","Texas","Alabama","Texas A&M","Auburn","Missouri","Georgia","South Carolina","LSU","Georgia","Tennessee","Florida","LSU","Texas A&M","Texas","Ole Miss","Tennessee","Vanderbilt","Auburn","Texas","Oklahoma","LSU","Ole Miss","Texas A&M","Alabama","Auburn","Kentucky","Oklahoma","Texas","South Carolina","Missouri","Auburn","Georgia","Texas","Oklahoma","LSU","Auburn","Oklahoma","Ole Miss","Tennessee","Miss State","Texas","Texas A&M","Alabama","South Carolina","Auburn","Florida","Georgia","Texas","Ole Miss","Texas A&M","Alabama","Texas","Auburn","Florida","Georgia","Missouri","Tennessee","Miss State","Texas A&M","Ole Miss","Florida","Ole Miss","Texas A&M","Auburn","LSU","Georgia","Kentucky","Missouri","Clemson","Tennessee"],"Abbie Palmer (Auburn)":["Missouri","Alabama","Arkansas","Auburn","Florida","Georgia","Kentucky","LSU","Miss State","Oklahoma","South Carolina","Tennessee","Texas","Texas A&M","Vanderbilt","Louisville","Kansas","Kentucky","Arkansas","Auburn","Florida","Georgia","LSU","Miss State","Michigan","Ole Miss","South Carolina","Tennessee","Texas","Texas A&M","Vanderbilt","Alabama","Georgia","Florida","Texas A&M","Ole Miss","Miss State","Missouri","Oklahoma","Tennessee","Texas","Vanderbilt","Alabama","Arkansas","Auburn","Florida","Oklahoma","Kentucky","LSU","Missouri","Texas","Miss State","Texas A&M","Tennessee","Florida","Georgia","Kentucky","LSU","Alabama","Tennessee","Florida","LSU","Missouri","Oklahoma","Vanderbilt","Tennessee","Vanderbilt","Georgia","Texas","Oklahoma","LSU","Ole Miss","Texas A&M","Alabama","Auburn","Kentucky","Miss State","Texas","South Carolina","Arkansas","Auburn","Georgia","Texas","Oklahoma","Alabama","Auburn","Oklahoma","Ole Miss","Tennessee","Miss State","Missouri","South Carolina","Alabama","Arkansas","Auburn","Kentucky","Georgia","LSU","Oklahoma","Texas A&M","Alabama","Texas","Auburn","Florida","Georgia","Kentucky","LSU","Miss State","Texas A&M","Ole Miss","Florida","Ole Miss","Texas","Auburn","Arkansas","Georgia","Kentucky","Missouri","South Carolina","Tennessee"],"Brandon Odom (Auburn)":["Missouri","Alabama","Arkansas","Auburn","Florida","Georgia","Kentucky","LSU","Miss State","Oklahoma","South Carolina","Tennessee","Texas","Texas A&M","Vanderbilt","Ole Miss","Missouri","Alabama","Utah","Auburn","Florida","Georgia","LSU","Miss State","Oklahoma","Ole Miss","South Carolina","Tennessee","Texas","Texas A&M","Vanderbilt","Alabama","Georgia","Auburn","Texas A&M","Ole Miss","South Carolina","Missouri","Oklahoma","Tennessee","Texas","Vanderbilt","Alabama","Arkansas","Auburn","Ole Miss","Georgia","Kentucky","Texas A&M","Missouri","Texas","Alabama","Texas A&M","Auburn","Missouri","Georgia","South Carolina","LSU","Georgia","Tennessee","Florida","LSU","Texas A&M","Texas","Ole Miss","Tennessee","Vanderbilt","Georgia","Texas","Oklahoma","LSU","Ole Miss","Texas A&M","Texas A&M","Auburn","Vanderbilt","Oklahoma","Texas","Tennessee","Missouri","Ole Miss","Georgia","Texas","Oklahoma","LSU","Auburn","Oklahoma","Ole Miss","Tennessee","Vanderbilt","Texas","Texas A&M","Alabama","Arkansas","Auburn","Florida","Georgia","Texas","Ole Miss","Texas A&M","Alabama","Texas","Auburn","Florida","Georgia","Missouri","Tennessee","Miss State","Texas A&M","Ole Miss","Florida State","Ole Miss","Texas A&M","Auburn","LSU","Georgia","Kentucky","Oklahoma","Clemson","Tennessee"],"Ellie Odom (Auburn)":["Missouri","Alabama","Arkansas","Auburn","Florida","Georgia","Kentucky","LSU","Miss State","Oklahoma","South Carolina","Tennessee","Texas","Texas A&M","Vanderbilt","Ole Miss","Missouri","Alabama","Utah","Auburn","Florida","Georgia","LSU","Miss State","Michigan","Ole Miss","South Carolina","Tennessee","Ohio State","Texas A&M","Vanderbilt","Alabama","Georgia","Florida","Texas A&M","Ole Miss","South Carolina","Missouri","Oklahoma","Tennessee","Texas","Vanderbilt","Alabama","Arkansas","Auburn","Ole Miss","Georgia","Kentucky","Texas A&M","Missouri","Texas","Alabama","Texas A&M","Tennessee","Missouri","Georgia","South Carolina","LSU","Georgia","Tennessee","Florida","LSU","Missouri","Texas","Ole Miss","Tennessee","Vanderbilt","Georgia","Texas","Oklahoma","LSU","Ole Miss","Texas A&M","Texas A&M","Auburn","Vanderbilt","Oklahoma","Texas","Tennessee","Missouri","Ole Miss","Georgia","Texas","Oklahoma","LSU","Auburn","Oklahoma","Ole Miss","Tennessee","Vanderbilt","Texas","Texas A&M","Alabama","Arkansas","Auburn","Florida","Missouri","Texas","Ole Miss","Tennessee","UT-Chattanooga","Texas","Auburn","Florida","Georgia","Missouri","Tennessee","Miss State","Texas A&M","Ole Miss","Florida","Ole Miss","Texas","Alabama","LSU","Georgia","Kentucky","Missouri","South Carolina","Tennessee"],"Judson Odom (Auburn)":["Missouri","Alabama","Arkansas","Auburn","Florida","Georgia","Kentucky","LSU","Miss State","Oklahoma","South Carolina","Tennessee","Texas","Texas A&M","Vanderbilt","Ole Miss","Kansas","Alabama","Arkansas","Auburn","Florida","Georgia","LSU","Miss State","Michigan","Ole Miss","South Carolina","Tennessee","Texas","Texas A&M","Vanderbilt","Alabama","Georgia","Florida","Texas A&M","Ole Miss","South Carolina","Missouri","Oklahoma","Tennessee","Texas","Vanderbilt","Alabama","Arkansas","Auburn","Florida","Georgia","Kentucky","LSU","Missouri","Texas","Alabama","Texas A&M","Auburn","Florida","Georgia","South Carolina","LSU","Georgia","Arkansas","Florida","LSU","Texas A&M","Texas","Ole Miss","Alabama","Vanderbilt","Georgia","Texas","Oklahoma","LSU","Ole Miss","Texas A&M","Alabama","Auburn","Kentucky","Oklahoma","Texas","Tennessee","Arkansas","Auburn","Georgia","Texas","Oklahoma","LSU","Auburn","Florida","Georgia","Tennessee","Vanderbilt","Texas","Texas A&M","Alabama","Arkansas","Auburn","Florida","Georgia","Texas","Ole Miss","Texas A&M","Alabama","Texas","Auburn","Florida","Georgia","Kentucky","LSU","Miss State","Oklahoma","Ole Miss","Florida","Ole Miss","Texas","Auburn","LSU","Georgia","Kentucky","Oklahoma","Clemson","Tennessee"],"Kyle McCain (Auburn)":["Missouri","Alabama","Arkansas","Auburn","Florida","Georgia","Kentucky","LSU","Miss State","Oklahoma","South Carolina","Tennessee","Texas","Texas A&M","Vanderbilt","Louisville","Missouri","Alabama","Utah","Auburn","Florida","Georgia","LSU","Minnesota","Michigan","Ole Miss","South Carolina","Tennessee","Ohio State","Texas A&M","Vanderbilt","Alabama","Georgia","Auburn","Texas A&M","LSU","Miss State","Missouri","Oklahoma","Tennessee","Texas","Vanderbilt","Alabama","Arkansas","Auburn","Ole Miss","Georgia","Kentucky","Texas A&M","Missouri","Texas","Alabama","Texas A&M","Tennessee","Missouri","Georgia","South Carolina","LSU","Georgia","Arkansas","Florida","LSU","Texas A&M","Texas","Ole Miss","Tennessee","Vanderbilt","Georgia","Texas","Oklahoma","LSU","Ole Miss","Texas A&M","Texas A&M","Auburn","Vanderbilt","Miss State","Texas","South Carolina","Missouri","Ole Miss","Georgia","Texas","Oklahoma","LSU","Auburn","Oklahoma","Ole Miss","Tennessee","Miss State","Missouri","Texas A&M","Alabama","Arkansas","Auburn","Florida","Georgia","Texas","Ole Miss","Texas A&M","Alabama","Texas","Auburn","Florida","Georgia","Missouri","Tennessee","Miss State","Oklahoma",null,"Florida","Ole Miss","Texas A&M","Auburn","LSU","Georgia","Kentucky","Oklahoma",null,"Tennessee"],"Millie Palmer (Auburn)":["Missouri","Alabama","Arkansas","Auburn","Florida","Georgia","Kentucky","Clemson","Miss State","Oklahoma","South Carolina","Tennessee","Texas","Texas A&M","Vanderbilt","Ole Miss","Missouri","Kentucky","Arkansas","Auburn","Florida","Georgia","LSU","Miss State","Michigan","Ole Miss","South Carolina","Tennessee","Ohio State","Texas A&M","Vanderbilt","Alabama","Georgia","Florida","Texas A&M","LSU","South Carolina","Missouri","New Mexico","Tennessee","Texas","NC State","Alabama","Arkansas","Auburn","Ole Miss","Oklahoma","Kentucky","Texas A&M","Missouri","Texas","Alabama","Texas A&M","Tennessee","Florida","Georgia","South Carolina","LSU","Georgia","Arkansas","Florida","LSU","Texas A&M","Texas","Ole Miss","Tennessee","Arkansas","Georgia","Texas","Oklahoma","LSU","Ole Miss","Texas A&M","Alabama","Auburn","Kentucky","Miss State","Texas","Tennessee","Missouri","Ole Miss","Georgia","Texas","Oklahoma","Alabama","Arkansas","Florida","Ole Miss","Tennessee","Vanderbilt","Missouri","Texas A&M","Alabama","South Carolina","Auburn","Kentucky","Georgia","Texas","Oklahoma","Tennessee","Alabama","Arkansas","Auburn","Florida","Georgia","Kentucky","LSU","Miss State","Oklahoma","Ole Miss","Florida State","Ole Miss","Texas","Auburn","LSU","Georgia","Kentucky","Oklahoma","Clemson","Tennessee"],"Tucker Odom (Auburn)":["Missouri","Alabama","Arkansas","Auburn","Florida","Georgia","Kentucky","LSU","Miss State","Oklahoma","South Carolina","Tennessee","Texas","Texas A&M","Vanderbilt","Ole Miss","Missouri","Alabama","Utah","Auburn","Florida","Georgia","LSU","Minnesota","Michigan","Ole Miss","South Carolina","Tennessee","Ohio State","Texas A&M","Vanderbilt","Alabama","Georgia","Auburn","Texas A&M","Ole Miss","South Carolina","Missouri","Oklahoma","Tennessee","Texas","Vanderbilt","Alabama","Arkansas","Auburn","Ole Miss","Georgia","Kentucky","Texas A&M","Missouri","Texas","Alabama","Texas A&M","Auburn","Florida","Georgia","South Carolina","LSU","Georgia","Tennessee","Florida","LSU","Texas A&M","Texas","Ole Miss","Tennessee","Vanderbilt","Georgia","Texas","Oklahoma","LSU","Ole Miss","Texas A&M","Alabama","Auburn","Kentucky","Oklahoma","Texas","Tennessee","Missouri","Ole Miss","Georgia","Texas","Oklahoma","LSU","Auburn","Oklahoma","Georgia","Tennessee","Miss State","Texas","Texas A&M","Alabama","South Carolina","Auburn","Florida","Georgia","Texas","Ole Miss","Texas A&M","Alabama","Texas","Auburn","Florida","Georgia","Missouri","Tennessee","Miss State","Texas A&M","Ole Miss","Florida","Ole Miss","Texas","Auburn","LSU","Georgia","Louisville","Oklahoma","Clemson","Tennessee"],"Matt Watford (Auburn)":["Missouri","Alabama","Arkansas","Auburn","Florida","Georgia","Kentucky","LSU","Miss State","Oklahoma","South Carolina","Tennessee","Texas","Texas A&M","Vanderbilt","Ole Miss","Missouri","Alabama","Arkansas","Auburn","Florida","Georgia","LSU","Miss State","Oklahoma","Ole Miss","South Carolina","Tennessee","Texas","Texas A&M","Vanderbilt","Alabama","Georgia","Auburn","Texas A&M","Ole Miss","South Carolina","Missouri","Oklahoma","Tennessee","Texas","Vanderbilt","Alabama","Arkansas","Auburn","Ole Miss","Georgia","Kentucky","LSU","Missouri","Texas","Alabama","Texas A&M","Auburn","Missouri","Georgia","South Carolina","LSU","Georgia","Tennessee","South Carolina","LSU","Texas A&M","Texas","Ole Miss","Tennessee","Vanderbilt","Auburn","Texas","Oklahoma","LSU","Ole Miss","Texas A&M","Texas A&M","Auburn","Kentucky","Oklahoma","Texas","Tennessee","Arkansas","Auburn","Georgia","Texas","Oklahoma","LSU","Auburn","Florida","Georgia","Tennessee","Miss State","Texas","South Carolina","Alabama","Arkansas","Auburn","Kentucky","Georgia","Texas","Oklahoma","Texas A&M","Alabama","Texas","Auburn","Florida","Georgia","Missouri","LSU","Miss State","Oklahoma","Ole Miss","Florida State","Ole Miss","Texas","Auburn","LSU","Georgia","Kentucky","Oklahoma","South Carolina","Tennessee"],"Mattie Palmer (Auburn)":["Missouri","Alabama","Arkansas","Auburn","Florida","Georgia","Kentucky","Clemson","Miss State","Oklahoma","South Carolina","Tennessee","Texas","Texas A&M","Vanderbilt","Ole Miss","Missouri","Alabama","Arkansas","Auburn","Florida","Georgia","LSU","Miss State","Oklahoma","Ole Miss","South Carolina","Tennessee","Ohio State","Texas A&M","Vanderbilt","Alabama","Georgia","Auburn","Texas A&M","LSU","Miss State","Missouri","New Mexico","Tennessee","Texas","Vanderbilt","Alabama","Arkansas","Auburn","Ole Miss","Georgia","Kentucky","LSU","Missouri","Texas","Alabama","Texas A&M","Auburn","Florida","Georgia","Kentucky","LSU","Georgia","Tennessee","Florida","LSU","Texas A&M","Texas","Ole Miss","Alabama","Arkansas","Georgia","Texas","Oklahoma","Miss State","Ole Miss","Texas A&M","Alabama","LSU","Kentucky","Oklahoma","Texas","Tennessee","Arkansas","Auburn","Florida","Texas","Oklahoma","LSU","Auburn","Florida","Ole Miss","Tennessee","Miss State","Texas","Texas A&M","Alabama","Arkansas","Miss State","Kentucky","Georgia","LSU","Ole Miss","Tennessee","Alabama","Texas","Auburn","Florida","Georgia","Missouri","Tennessee","Miss State","Texas A&M","Ole Miss","Florida State","Ole Miss","Texas A&M","Auburn","LSU","Georgia","Kentucky","Oklahoma","South Carolina","Tennessee"],"Daddy Butch (Auburn)":["Missouri","Alabama","Arkansas","Auburn","Florida","Georgia","Kentucky","Clemson","Miss State","Oklahoma","South Carolina","Tennessee","Texas","Texas A&M","Vanderbilt","Ole Miss","Kansas","Alabama","Utah","Auburn","Florida","Georgia","LSU","Minnesota","Michigan","Ole Miss","South Carolina","Georgia Tech","Ohio State","Texas A&M","Vanderbilt","Alabama","Georgia","Auburn","Texas A&M","LSU","South Carolina","Missouri","Oklahoma","Tennessee","Texas","Vanderbilt","Alabama","Arkansas","Auburn","Florida","Georgia","Kentucky","LSU","Missouri","Texas","Alabama","Texas A&M","Tennessee","Missouri","Georgia","South Carolina","LSU","Georgia","Tennessee","Florida","LSU","Texas A&M","Oklahoma","Vanderbilt","Tennessee","Vanderbilt","Georgia","Texas","Oklahoma","LSU","Missouri","Texas A&M","Texas A&M","Auburn","Kentucky","Oklahoma","Texas","Tennessee","Missouri","Ole Miss","Georgia","Texas","Oklahoma","LSU","Auburn","Oklahoma","Ole Miss","Tennessee","Miss State","Texas","Texas A&M","Alabama","Arkansas","Auburn","Florida","Georgia","Texas","Oklahoma","Texas A&M","Alabama","Texas","Auburn","Florida","South Carolina","Missouri","Tennessee","Miss State","Texas A&M","Ole Miss","Florida","Miss State","Texas A&M","Alabama","LSU","Georgia","Kentucky","Oklahoma","Clemson","Tennessee"],"Cameron Watford (Auburn)":["Missouri","Alabama","Arkansas","Auburn","Florida","Georgia","Kentucky","Clemson","Miss State","Oklahoma","South Carolina","Tennessee","Texas","Texas A&M","Vanderbilt","Ole Miss","Missouri","Alabama","Utah","Auburn","Florida","Georgia","LSU","Miss State","Oklahoma","Ole Miss","South Carolina","Tennessee","Ohio State","Texas A&M","Vanderbilt","Alabama","Georgia","Auburn","Texas A&M","Ole Miss","Miss State","Missouri","Oklahoma","Tennessee","Texas","Vanderbilt","Alabama","Arkansas","Auburn","Ole Miss","Georgia","Kentucky","Texas A&M","Miss State","Texas","Alabama","Texas A&M","Auburn","Florida","Georgia","South Carolina","LSU","Georgia","Tennessee","Florida","LSU","Texas A&M","Texas","Vanderbilt","Tennessee","Vanderbilt","Georgia","Texas","Oklahoma","LSU","Ole Miss","Texas A&M","Texas A&M","Auburn","Vanderbilt","Oklahoma","Texas","Tennessee","Arkansas","Auburn","Georgia","Texas","Oklahoma","LSU","Auburn","Oklahoma","Ole Miss","Tennessee","Miss State","Texas","Texas A&M","Alabama","Arkansas","Auburn","Florida","Georgia","Texas","Oklahoma","Texas A&M","Alabama","Texas","Auburn","Florida","Georgia","Missouri","Tennessee","Miss State","Oklahoma","Ole Miss","Florida State","Ole Miss","Texas","Auburn","LSU","Georgia","Louisville","Missouri","South Carolina","Tennessee"],"Rylin Watford (Auburn)":["Missouri","Alabama","Arkansas","Auburn","Florida","Georgia","Kentucky","Clemson","Miss State","Oklahoma","South Carolina","Tennessee","Texas","Texas A&M","Vanderbilt","Ole Miss","Kansas","Alabama","Utah","Auburn","Florida","Georgia","LSU","Miss State","Michigan","Ole Miss","South Carolina","Tennessee","Texas","Texas A&M","Vanderbilt","Alabama","Arkansas","Florida","Texas A&M","Ole Miss","South Carolina","Missouri","Oklahoma","Tennessee","Texas","Vanderbilt","South Carolina","Arkansas","Auburn","Ole Miss","Oklahoma","Kentucky","Texas A&M","Missouri","Texas","Miss State","Texas A&M","Tennessee","Florida","Georgia","South Carolina","LSU","Georgia","Tennessee","Florida","Kentucky","Missouri","Texas","Vanderbilt","Tennessee","Vanderbilt","Georgia","Texas","Oklahoma","Miss State","Ole Miss","Texas A&M","Alabama","Auburn","Vanderbilt","Oklahoma","Texas","Tennessee","Missouri","Ole Miss","Georgia","Texas","Oklahoma","Alabama","Auburn","Oklahoma","Ole Miss","Tennessee","Vanderbilt","Texas","Texas A&M","Vanderbilt","Arkansas","Auburn","Florida","Georgia","Texas","Ole Miss","Texas A&M","Alabama","Texas","Auburn","Florida","Georgia","Kentucky","Tennessee","Miss State","Oklahoma","Ole Miss","Florida","Miss State","Texas A&M","Auburn","Arkansas","Georgia","Louisville","Missouri","South Carolina","Vanderbilt"]}};
+const TOTAL_WEEKS = 13;
+// CURRENT_WEEK/ENTRY_WEEK are computed from the data (which week is the
+// furthest with a real result in it) rather than hand-set, so entering a
+// result is what actually advances the season \u2014 not editing a constant.
+function computeCurrentWeek(){
+  let max = 0;
+  SEASON.games.forEach(g=>{ if(g.winner && g.week > max) max = g.week; });
+  return max;
+}
+let CURRENT_WEEK = computeCurrentWeek();
+let ENTRY_WEEK = CURRENT_WEEK + 1;
+
+const baseRoster = SEASON.roster;
+
+// synthetic per-week standings snapshots for weeks 1..CURRENT_WEEK, sorted best-to-worst each week
+function seededShuffle(arr, seed){
+  const a = [...arr]; let s = seed;
+  for(let i=a.length-1;i>0;i--){ s = (s*9301+49297)%233280; const j = Math.floor((s/233280)*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+  return a;
+}
+
+// Real standings: computed from each person's picks vs. the actual entered results.
+// Built lazily after picksForPlayer/sampleGames are defined (see buildWeekSnapshots).
+const weekSnapshots = {
+  0: baseRoster.map(p => ({...p, pts: 0, record: "0-0"})), // preseason baseline, everyone tied
+};
+function buildWeekSnapshots(){
+  for(let w=1; w<=CURRENT_WEEK; w++){
+    const scored = baseRoster.map(p=>{
+      const picks = picksForPlayer(p.name);
+      let correct = 0, decided = 0;
+      picks.forEach(g=>{
+        if(g.week > w || !g.winner) return;
+        decided++;
+        if(g.pick && g.pick===g.winner) correct++;
+      });
+      return {...p, pts: correct, record: `${correct}-${decided-correct}`};
+    });
+    // rank by points, ties broken by name for stability week to week
+    scored.sort((a,b)=> b.pts-a.pts || a.name.localeCompare(b.name));
+    weekSnapshots[w] = scored;
+  }
+}
+
+// movement + sparkline computed from the snapshot history
+function enrichWeek(w){
+  const snap = weekSnapshots[w];
+  const prev = weekSnapshots[w-1];
+  // Week 0 is the preseason baseline (everyone tied, arbitrary list order) —
+  // it's not a real rank, so movement is only meaningful once we're comparing
+  // two actual played weeks (w-1 >= 1).
+  const prevIsReal = prev && (w-1) >= 1;
+  return snap.map((p,i)=>{
+    let move = "flat";
+    if(prevIsReal){
+      const prevIdx = prev.findIndex(x=>x.name===p.name);
+      const diff = prevIdx - i;
+      move = diff===0 ? "flat" : (diff>0 ? "up"+diff : "down"+Math.abs(diff));
+    }
+    const sp = [];
+    for(let ww=Math.max(0,w-2); ww<=w; ww++){
+      const s = weekSnapshots[ww].find(x=>x.name===p.name);
+      sp.push(s ? s.pts : 1);
+    }
+    return {...p, move, sp};
+  });
+}
+
+let currentBoardWeek = CURRENT_WEEK;
+function alphaRoster(){
+  return [...SEASON.roster].sort((a,b)=>a.name.localeCompare(b.name));
+}
+function initials(n){ return n.split(" ").map(w=>w[0]).slice(0,2).join("").toUpperCase(); }
+function moveParts(m){
+  if(m==="flat") return {dir:"flat", n:0};
+  const dir = m.startsWith("up") ? "up" : "down";
+  return {dir, n: parseInt(m.replace(/[a-z]/g,""))};
+}
+function moveTag(m){
+  const {dir,n} = moveParts(m);
+  if(dir==="flat") return '<span class="mv flat">&ndash;</span>';
+  const arrow = dir==="up" ? "&#9650;" : "&#9660;";
+  return `<span class="mv ${dir}">${arrow}${n}</span>`;
+}
+function sparkline(arr){
+  const max = Math.max(...arr,1);
+  return arr.map(v=>`<i style="height:${Math.max(4,(v/max)*22)}px"></i>`).join("");
+}
+function ordinal(n){ const s=["th","st","nd","rd"], v=n%100; return s[(v-20)%10]||s[v]||s[0]; }
+
+function renderWeekSelector(elId, onPick, activeWeek, maxPlayable){
+  const cap = maxPlayable || CURRENT_WEEK;
+  const el = document.getElementById(elId);
+  let html = '';
+  for(let w=1; w<=TOTAL_WEEKS; w++){
+    const played = w <= cap;
+    const cls = ['wk-chip', played?'played':'future', w===activeWeek?'active':''].join(' ');
+    html += `<button class="${cls}" data-w="${w}" ${played?'':'disabled'}>${w}</button>`;
+  }
+  el.innerHTML = html;
+  el.querySelectorAll('.wk-chip.played').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      el.querySelectorAll('.wk-chip').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      onPick(parseInt(btn.dataset.w));
+    });
+  });
+}
+
+// Champ picks + season-long context, keyed by name (same 21 as roster)
+const champPicks = SEASON.champ;
+const CHAMP_COLORS = {
+  "Georgia":"#BA0C2F","Texas":"#BF5700","Auburn":"#03244D","Texas A&M":"#500000","Ole Miss":"#14213D","LSU":"#461D7C",
+};
+const CHAMPION_DECIDED = false; // flip true (and set the actual champ) once the SEC title game is final
+
+function rankHeatColor(rank, n){
+  // green (best/low rank) -> yellow -> red (worst/high rank)
+  const t = (rank-1)/(n-1);
+  let r,g,b;
+  if(t<0.5){ const u=t/0.5; r=Math.round(99+u*(255-99)); g=Math.round(190+u*(235-190)); b=Math.round(123+u*(120-123)); }
+  else{ const u=(t-0.5)/0.5; r=Math.round(255-u*(255-235)); g=Math.round(235-u*(235-90)); b=Math.round(120-u*(120-90)); }
+  return `rgb(${r},${g},${b})`;
+}
+function renderStandingsTable(){
+  const n = baseRoster.length;
+  const roster = enrichWeek(CURRENT_WEEK);
+  const table = document.getElementById('standingsTable');
+  let head = `<tr>
+    <th class="sticky1">Rank</th><th class="sticky2">Player</th>
+    <th>Total<br>Points</th><th>Games</th>${CHAMPION_DECIDED ? '<th>Champ<br>Bonus</th>' : ''}<th>Champ<br>Pick</th>`;
+  for(let w=1; w<=TOTAL_WEEKS; w++) head += `<th class="wk">Wk ${w}<br>Rank</th>`;
+  head += `<th>Percentile</th><th>% Poss.<br>Points</th><th>W-L</th></tr>`;
+
+  let body = '';
+  roster.forEach((p,i)=>{
+    const rank = i+1;
+    const rankCls = rank===1?'g':rank===2?'s':rank===3?'b':'';
+    const [w,l] = p.record.split('-').map(Number);
+    const games = w+l;
+    const pctPoss = games ? Math.round((w/games)*1000)/10 : 0;
+    const percentile = Math.round(((n-rank+1)/n)*1000)/10;
+    const champColor = CHAMP_COLORS[champPicks[p.name]] || '#5B6472';
+    let weekCells = '';
+    for(let wk=1; wk<=TOTAL_WEEKS; wk++){
+      if(wk<=CURRENT_WEEK){
+        const snap = weekSnapshots[wk];
+        const wr = snap.findIndex(x=>x.name===p.name)+1;
+        weekCells += `<td><span class="wk-rank-cell" style="background:${rankHeatColor(wr,n)}">${wr}</span></td>`;
+      } else {
+        weekCells += `<td><span class="wk-rank-cell tbd">&ndash;</span></td>`;
+      }
+    }
+    body += `<tr>
+      <td class="sticky1"><span class="rank-chip ${rankCls}">${rank}</span></td>
+      <td class="sticky2"><div class="pl-name">${p.name}</div><div class="pl-team">${p.team}</div></td>
+      <td><span class="tot-pts">${p.pts}</span></td>
+      <td>${games}</td>
+      ${CHAMPION_DECIDED ? '<td style="color:var(--muted);">Pending</td>' : ''}
+      <td><span class="champ-chip" style="background:${champColor}">${champPicks[p.name]||'\u2013'}</span></td>
+      ${weekCells}
+      <td class="pct-cell">${percentile}</td>
+      <td class="pct-cell">${pctPoss}%</td>
+      <td style="color:var(--muted);">${p.record}</td>
+    </tr>`;
+  });
+  table.innerHTML = head + body;
+  document.getElementById('stLegendSw').innerHTML =
+    [1, Math.round(n*0.25), Math.round(n*0.5), Math.round(n*0.75), n].map(r=>`<div class="sw" style="background:${rankHeatColor(r,n)}"></div>`).join('');
+}
+
+/* ---------- THIS WEEK / CONSENSUS ---------- */
+function renderConsensus(){
+  const wrap = document.getElementById('consensusList');
+  wrap.innerHTML = upcoming.map(g=>{
+    const pctB = 100 - g.pctA;
+    const split = Math.min(g.pctA,pctB) >= 38;
+    return `<div class="cons-row">
+      <div class="cons-top">
+        <div class="cons-teams">${g.a} <span style="color:var(--muted);font-weight:500;">vs</span> ${g.b}${split?'<span class="upset-badge">SPLIT DECISION</span>':''}</div>
+        <div class="cons-when">${g.when}</div>
+      </div>
+      <div class="cons-bar">
+        <div class="cons-seg a" style="width:${g.pctA}%">${g.pctA>=12?g.pctA+'%':''}</div>
+        <div class="cons-seg b" style="width:${pctB}%">${pctB>=12?pctB+'%':''}</div>
+      </div>
+      <div class="cons-labels"><span>${g.a}</span><span>${g.b}</span></div>
+    </div>`;
+  }).join('');
+}
+
+/* ---------- RESULTS (actual outcomes, browsable by week) ---------- */
+const weeklyResults = (()=>{
+  const byWeek = {};
+  SEASON.games.forEach(g=>{ (byWeek[g.week] = byWeek[g.week] || []).push(g); });
+  return byWeek;
+})();
+// Real pick split: tallies how the 21 family members actually picked a game,
+// from the real submissions loaded in SEASON.picks — not a stand-in number.
+function realSplit(g){
+  const gi = SEASON.games.indexOf(g);
+  let votesA = 0, votesB = 0;
+  SEASON.roster.forEach(p=>{
+    const pick = (SEASON.picks[p.name] || [])[gi];
+    if(pick === g.a) votesA++;
+    else if(pick === g.b) votesB++;
+  });
+  const total = votesA + votesB;
+  const pctA = total ? Math.round(votesA/total*100) : 50;
+  return {pctA, pctB: 100 - pctA, total};
+}
+
+// "This week" consensus view mirrors whichever week is actually next up
+// (the one still being entered), not a hardcoded week — so it never shows
+// already-decided games as if they were upcoming.
+let upcoming = (weeklyResults[ENTRY_WEEK] || []).map(g => ({when:g.when, a:g.a, b:g.b, pctA: realSplit(g).pctA}));
+function renderResults(week){
+  const results = (weeklyResults[week] || []).filter(g=>g.winner);
+  const table = document.getElementById('resultsTable');
+  const bdEl = document.getElementById('breakdownList');
+  if(!results.length){
+    table.innerHTML = `<tr><th>Date</th><th>Matchup</th><th>Favorite</th><th>Winner</th><th>Value</th></tr>`;
+    bdEl.innerHTML = `<div class="h2h-empty">No results entered yet. Head to "Enter results" once this week's games are final.</div>`;
+    return;
+  }
+  table.innerHTML = `<tr><th>Date</th><th>Matchup</th><th>Group pick</th><th>Winner</th><th>Score</th><th>Value</th></tr>` +
+    results.map(g=>`<tr>
+      <td>${g.when}</td><td>${g.a} @ ${g.b}</td><td>${g.favorite}</td>
+      <td class="winner-badge">${g.winner}${g.winner!==g.favorite?' <span class="upset-badge">GROUP MISSED</span>':''}</td>
+      <td style="color:var(--muted);">${g.score||''}</td>
+      <td><span class="value-chip">1 pt</span></td>
+    </tr>`).join('');
+
+  const bd = results.map(g=>{
+    const {pctA, pctB} = realSplit(g);
+    // show the actual majority side first, whichever team that is
+    return pctA >= pctB
+      ? {team:g.a, opp:g.b, pct:pctA}
+      : {team:g.b, opp:g.a, pct:pctB};
+  }).sort((x,y)=> Math.abs(x.pct-50) - Math.abs(y.pct-50));
+  bdEl.innerHTML = bd.map((b,i)=>`
+    <div class="breakdown-row">
+      <div class="bd-side"><span class="bd-pct hi">${b.pct}%</span><span>${b.team}${i<2?'<span class="upset-badge" style="margin-left:6px;">CLOSEST</span>':''}</span></div>
+      <span style="color:var(--muted);font-size:11px;">vs</span>
+      <div class="bd-side right"><span class="bd-pct lo">${100-b.pct}%</span><span>${b.opp}</span></div>
+    </div>`).join('');
+}
+
+/* ---------- ENTER RESULTS ---------- */
+// No separate copy of the games: this reads and writes weeklyResults[week]
+// directly, which holds the SAME object references as SEASON.games \u2014 so
+// marking a winner here is the actual, real update, not a local-only click.
+let currentEnterWeek = ENTRY_WEEK;
+function renderGames(week){
+  currentEnterWeek = week;
+  const games = weeklyResults[week] || [];
+  const wrap = document.getElementById('gameList');
+  wrap.innerHTML = games.map((g,i)=>{
+    const picked = g.winner ? (g.winner===g.a ? 'a' : 'b') : null;
+    return `
+    <div class="game-row ${picked?'done':''}" data-i="${i}">
+      <div class="when">${g.when}</div>
+      <div class="matchup">${g.a} vs ${g.b}</div>
+      <div class="pickbtns">
+        <button class="pickbtn ${picked==='a'?'sel':''}" data-side="a">${g.a}</button>
+        <button class="pickbtn ${picked==='b'?'sel':''}" data-side="b">${g.b}</button>
+      </div>
+      <input class="score-input" data-i="${i}" placeholder="Score e.g. 27-24" value="${g.score||''}">
+    </div>`;
+  }).join("");
+  wrap.querySelectorAll('.pickbtn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const row = btn.closest('.game-row');
+      const i = parseInt(row.dataset.i);
+      const g = games[i];
+      const side = btn.dataset.side;
+      const newWinner = side==='a' ? g.a : g.b;
+      // clicking the already-selected team clears it back to undecided
+      g.winner = (g.winner === newWinner) ? null : newWinner;
+      refreshAfterDataChange();
+    });
+  });
+  wrap.querySelectorAll('.score-input').forEach(inp=>{
+    inp.addEventListener('change', ()=>{
+      const i = parseInt(inp.dataset.i);
+      games[i].score = inp.value.trim() || null;
+      refreshAfterDataChange({rerenderEnter:false});
+    });
+  });
+}
+function updateProgress(){
+  const games = weeklyResults[currentEnterWeek] || [];
+  const done = games.filter(g=>g.winner).length;
+  document.getElementById('progLabel').textContent = `${done} / ${games.length}`;
+  document.getElementById('progBar').style.width = (games.length ? Math.round(done/games.length*100) : 0)+'%';
+}
+
+// Re-run every computed thing and re-render every view after a data edit,
+// so entering one result updates standings/analytics/everything immediately.
+function updateWeekLabels(){
+  document.getElementById('sfWeek').textContent = `Week ${Math.max(CURRENT_WEEK,1)} of ${TOTAL_WEEKS}`;
+  document.getElementById('mhWeek').textContent = `Week ${Math.max(CURRENT_WEEK,1)} \u00b7 ${SEASON.roster.length} players`;
+}
+
+function refreshAfterDataChange(opts){
+  opts = opts || {};
+  CURRENT_WEEK = computeCurrentWeek();
+  ENTRY_WEEK = CURRENT_WEEK + 1;
+  sampleGames = SEASON.games.filter(g=>g.week<=CURRENT_WEEK);
+  upcoming = (weeklyResults[ENTRY_WEEK] || []).map(g => ({when:g.when, a:g.a, b:g.b, pctA: realSplit(g).pctA}));
+  buildWeekSnapshots();
+  updateWeekLabels();
+
+  renderStandingsTable();
+  renderWeekSelector('resultsWeekSel', renderResults, CURRENT_WEEK);
+  renderResults(CURRENT_WEEK);
+  renderConsensus();
+  renderWeekSelector('enterWeekSel', renderGames, ENTRY_WEEK, Math.max(...Object.keys(weeklyResults).map(Number)));
+  if(opts.rerenderEnter !== false) renderGames(currentEnterWeek);
+  updateProgress();
+  renderMovers();
+  renderAnalytics();
+  renderOverview();
+  renderCrmStats();
+  renderCrmTable();
+  const scName = document.getElementById('scSelfSelect')?.value;
+  if(scName) refreshScorecardView();
+}
+
+/* ---------- WEEKLY TRENDS + MOVERS ---------- */
+function renderMovers(){
+  const roster = enrichWeek(CURRENT_WEEK);
+  const withMove = roster.map(p=>({...p, mv:moveParts(p.move)}));
+  const riser = withMove.filter(p=>p.mv.dir==='up').sort((a,b)=>b.mv.n-a.mv.n)[0];
+  const faller = withMove.filter(p=>p.mv.dir==='down').sort((a,b)=>b.mv.n-a.mv.n)[0];
+  const wrap = document.getElementById('moversWrap');
+  if(CURRENT_WEEK < 2 || !riser || !faller){
+    wrap.innerHTML = `
+      <div class="mover-card riser">
+        <div class="tag">Movers this week</div>
+        <div class="name" style="font-size:15px;">No movement yet</div>
+        <div class="detail">Rank changes start showing once there's a prior week to compare against.</div>
+      </div>`;
+    return;
+  }
+  wrap.innerHTML = `
+    <div class="mover-card riser">
+      <div class="bignum">&#9650;</div>
+      <div class="tag">Biggest riser this week</div>
+      <div class="name">${riser.name}</div>
+      <div class="detail">Jumped ${riser.mv.n} spot${riser.mv.n>1?'s':''} &middot; now ${roster.indexOf(riser)+1}${ordinal(roster.indexOf(riser)+1)} place</div>
+    </div>
+    <div class="mover-card faller">
+      <div class="bignum">&#9660;</div>
+      <div class="tag">Biggest faller this week</div>
+      <div class="name">${faller.name}</div>
+      <div class="detail">Dropped ${faller.mv.n} spot${faller.mv.n>1?'s':''} &middot; now ${roster.indexOf(faller)+1}${ordinal(roster.indexOf(faller)+1)} place</div>
+    </div>`;
+}
+const weeks6 = ["Wk1","Wk2","Wk3"];
+function heatColor(v,max){
+  const t = v/max;
+  const r = Math.round(255 - t*(255-30));
+  const g = Math.round(255 - t*(255-125));
+  const b = Math.round(255 - t*(255-70));
+  return `rgb(${r},${g},${b})`;
+}
+function renderHeat(){
+  const table = document.getElementById('heatTable');
+  let head = '<tr><th>Player</th>' + weeks6.map(w=>`<th>${w}</th>`).join('') + '<th>Trend</th></tr>';
+  let body = '';
+  baseRoster.slice(0,14).forEach(p=>{
+    const vals = weeks6.map((w,i)=>{
+      const wk = i+1;
+      const s = weekSnapshots[wk].find(x=>x.name===p.name);
+      const prevPts = wk>1 ? weekSnapshots[wk-1].find(x=>x.name===p.name).pts : 0;
+      return s ? Math.max(0, s.pts - prevPts) : 0;
+    });
+    const max = Math.max(...vals,1);
+    const trendUp = vals[vals.length-1] >= vals[0];
+    body += `<tr><td>${p.name}</td>` + vals.map(v=>`<td style="background:${heatColor(v,max)}">${v}</td>`).join('') +
+      `<td class="trend" style="color:${trendUp?'#1E7B34':'#B3261E'}">${trendUp?'&#9650;':'&#9660;'}</td></tr>`;
+  });
+  table.innerHTML = head + body;
+  const sw = document.getElementById('legendSw');
+  sw.innerHTML = [0,2,4,6,8].map(v=>`<div class="sw" style="background:${heatColor(v,8)}"></div>`).join('');
+}
+
+/* ---------- ANALYTICS ---------- */
+// Computed for real from every submitted pick and champion vote — not sample data.
+const SEC_TEAMS_16 = ["Alabama","Arkansas","Auburn","Florida","Georgia","Kentucky","LSU","Miss State",
+  "Missouri","Oklahoma","Ole Miss","South Carolina","Tennessee","Texas","Texas A&M","Vanderbilt"];
+function buildCumulativePredictions(){
+  const n = SEASON.roster.length;
+  const champCounts = {};
+  Object.values(SEASON.champ).forEach(t=>{ champCounts[t] = (champCounts[t]||0) + 1; });
+  return SEC_TEAMS_16.map(team=>{
+    let totalWins = 0;
+    SEASON.roster.forEach(p=>{
+      const picks = SEASON.picks[p.name] || [];
+      SEASON.games.forEach((g,gi)=>{
+        if((g.a===team || g.b===team) && picks[gi]===team) totalWins++;
+      });
+    });
+    const champN = champCounts[team] || 0;
+    return {team, wins: Math.round(totalWins/n*10)/10, champN, champPct: Math.round(champN/n*100)};
+  });
+}
+const cumulativePredictions = buildCumulativePredictions();
+function predictHeat(v,max,goodHigh){
+  const t = Math.min(1, v/max);
+  const alpha = 0.12 + t*0.55;
+  return goodHigh ? `rgba(30,123,52,${alpha})` : `rgba(30,123,52,${alpha*0.7})`;
+}
+function renderPredictTable(){
+  const table = document.getElementById('predictTable');
+  const maxWins = Math.max(...cumulativePredictions.map(t=>t.wins));
+  const maxChamp = Math.max(...cumulativePredictions.map(t=>t.champPct));
+  let head = `<tr><th>Team</th><th class="num">Avg wins</th><th class="num">SEC champ #</th><th class="num">SEC champ %</th></tr>`;
+  let body = cumulativePredictions.map(t=>`
+    <tr>
+      <td>${t.team}</td>
+      <td class="num"><span class="heatcell" style="background:${predictHeat(t.wins,maxWins,true)}">${t.wins}</span></td>
+      <td class="num">${t.champN}</td>
+      <td class="num"><span class="heatcell" style="background:${predictHeat(t.champPct,maxChamp,true)}">${t.champPct}%</span></td>
+    </tr>`).join('');
+  table.innerHTML = head + body;
+  const totalChamp = cumulativePredictions.reduce((s,t)=>s+t.champN,0);
+  document.getElementById('predictFoot').textContent =
+    `${totalChamp} total SEC Champion votes cast across the group \u00b7 based on 21 submitted brackets`;
+}
+
+// Real pick splits across the full schedule (picks are locked before the
+// season starts, so this is season-long and won't change week to week).
+function buildClosestSplits(){
+  return SEASON.games.map(g=>{
+    const {pctA, pctB} = realSplit(g);
+    return {when:g.when.slice(5).replace(/^0?(\d+)-0?(\d+)$/,'$1/$2'), a:g.a, pa:pctA, b:g.b, pb:pctB};
+  }).filter(s => s.pa>0 && s.pb>0) // only games where the family actually split at all
+    .sort((x,y)=> Math.abs(x.pa-50) - Math.abs(y.pa-50))
+    .slice(0,10);
+}
+const closestSplits = buildClosestSplits();
+function renderClosestSplits(){
+  document.getElementById('closestSplits').innerHTML = closestSplits.map(s=>`
+    <div class="split-row">
+      <div class="split-date">${s.when}</div>
+      <div class="split-bar">
+        <div class="split-seg" style="width:${s.pa}%;background:var(--navy);">${s.a} ${s.pa}%</div>
+        <div class="split-seg" style="width:${s.pb}%;background:var(--crimson);justify-content:flex-end;">${s.b} ${s.pb}%</div>
+      </div>
+      <div style="text-align:right;color:var(--muted);font-size:11px;">${Math.abs(s.pa-s.pb)}pt gap</div>
+    </div>`).join('');
+}
+
+/* ---------- ROTATING STORY OF THE WEEK ---------- */
+function buildStories(){
+  const week = CURRENT_WEEK;
+  const roster = enrichWeek(week);
+  const withMove = roster.map((p,i)=>({...p, rank:i+1, mv:moveParts(p.move)}));
+  const riser = withMove.filter(p=>p.mv.dir==='up').sort((a,b)=>b.mv.n-a.mv.n)[0];
+  const results = weeklyResults[week] || [];
+  const upset = results.find(g=>g.winner && g.winner!==g.favorite);
+  const leader = withMove[0];
+  const stories = [];
+  if(CURRENT_WEEK === 0){
+    return [{
+      tag:"Preseason", headline:"21 players locked in their picks",
+      body:"Everyone's tied at 0 with the season not yet underway. Enter Week 1's results once the games are final to get things moving."
+    }];
+  }
+  if(upset){
+    stories.push({
+      tag:`Upset of the week`, headline:`${upset.winner} shocks the field`,
+      body:`Only a handful of picks had ${upset.winner} beating ${upset.winner===upset.a?upset.b:upset.a} &mdash; the family's favorite-pickers took a real hit here.`
+    });
+  }
+  if(riser){
+    stories.push({
+      tag:`Biggest climb this week`, headline:`${riser.name} jumps ${riser.mv.n} spot${riser.mv.n>1?'s':''}`,
+      body:`Now sitting at #${riser.rank}, riding one of the best single-week runs of the season so far.`
+    });
+  }
+  stories.push({
+    tag:`Championship race`, headline:`${leader.name} holds the top spot`,
+    body:`${leader.pts} points and a ${leader.record} record &mdash; the field is chasing, but no one's caught up yet.`
+  });
+  return stories;
+}
+let storyIdx = 0;
+function renderStoryCard(){
+  const stories = buildStories();
+  storyIdx = ((storyIdx % stories.length) + stories.length) % stories.length;
+  const s = stories[storyIdx];
+  const card = document.getElementById('storyCard');
+  card.innerHTML = `
+    <div class="story-nav">
+      <button id="storyPrev">&#8249;</button><button id="storyNext">&#8250;</button>
+    </div>
+    <div class="story-tag">${s.tag}</div>
+    <div class="story-headline">${s.headline}</div>
+    <div class="story-body">${s.body}</div>
+    <div class="story-dots">${stories.map((_,i)=>`<button class="${i===storyIdx?'active':''}" data-i="${i}"></button>`).join('')}</div>
+  `;
+  card.querySelector('#storyPrev').onclick = ()=>{ storyIdx--; renderStoryCard(); };
+  card.querySelector('#storyNext').onclick = ()=>{ storyIdx++; renderStoryCard(); };
+  card.querySelectorAll('.story-dots button').forEach(b=>{
+    b.onclick = ()=>{ storyIdx = parseInt(b.dataset.i); renderStoryCard(); };
+  });
+}
+
+// Real consensus accuracy: for every decided game, find the family's majority
+// pick (from everyone's actual picks) and check whether that majority was right.
+function computeConsensusAccuracy(){
+  const roster = enrichWeek(CURRENT_WEEK);
+  let rightCalls = 0, totalGames = 0;
+  sampleGames.forEach((g,i)=>{
+    if(!g.winner) return;
+    let aVotes = 0, bVotes = 0;
+    roster.forEach(p=>{
+      const pick = picksForPlayer(p.name)[i]?.pick;
+      if(pick===g.a) aVotes++; else if(pick===g.b) bVotes++;
+    });
+    const majority = aVotes>=bVotes ? g.a : g.b;
+    totalGames++;
+    if(majority===g.winner) rightCalls++;
+  });
+  return totalGames ? Math.round(rightCalls/totalGames*100) : 0;
+}
+// Real current streaks: consecutive correct picks working backward from the
+// most recently decided game, per person.
+function computeBestWeeks(){
+  const roster = enrichWeek(CURRENT_WEEK);
+  return roster.map(p=>{
+    let best = 0, bestWeek = 1;
+    for(let w=1; w<=CURRENT_WEEK; w++){
+      const cur = weekSnapshots[w].find(x=>x.name===p.name)?.pts || 0;
+      const prev = w>1 ? (weekSnapshots[w-1].find(x=>x.name===p.name)?.pts || 0) : 0;
+      const scored = cur - prev;
+      if(scored > best){ best = scored; bestWeek = w; }
+    }
+    return {name:p.name, best, bestWeek};
+  }).sort((a,b)=>b.best-a.best).slice(0,5);
+}
+
+function renderAnalytics(){
+  storyIdx = 0;
+  renderStoryCard();
+  const grid = document.getElementById('statGrid');
+  const consensusPct = computeConsensusAccuracy();
+  const upsetThisWeek = (weeklyResults[CURRENT_WEEK]||[]).find(g=>g.winner && g.winner!==g.favorite);
+  grid.innerHTML = `
+    <div class="stat-card accent"><div class="lbl">Consensus accuracy</div><div class="val">${consensusPct}%</div><div class="note">How often the family's majority pick has been right, season to date</div></div>
+    <div class="stat-card"><div class="lbl">Latest upset</div><div class="val">${upsetThisWeek?upsetThisWeek.winner:'None this week'}</div><div class="note">${upsetThisWeek?`Beat the favorite in week ${CURRENT_WEEK}`:'The favorites all held this week'}</div></div>
+    <div class="stat-card"><div class="lbl">Games decided</div><div class="val">${sampleGames.filter(g=>g.winner).length}</div><div class="note">Out of ${sampleGames.length} played so far this season</div></div>
+  `;
+  const bestWeeks = computeBestWeeks();
+  const maxBest = Math.max(...bestWeeks.map(s=>s.best), 1);
+  document.getElementById('streakList').innerHTML = bestWeeks.map(s=>`
+    <div class="rank-item"><span>${s.name}</span><div class="bar-bg"><div class="bar-fg" style="width:${s.best/maxBest*100}%"></div></div><span class="num">${s.best} pts, Wk${s.bestWeek}</span></div>
+  `).join('');
+
+  // Homer index, computed from real picks: how often someone backed their own
+  // team in games that team actually played.
+  const homers = enrichWeek(CURRENT_WEEK).map(p=>{
+    const mine = picksForPlayer(p.name, fullGameSet).filter(g=>g.a===p.team || g.b===p.team);
+    if(!mine.length) return null;
+    const backed = mine.filter(g=>g.pick===p.team).length;
+    return {name:p.name, pct:Math.round(backed/mine.length*100), n:mine.length};
+  }).filter(Boolean).sort((a,b)=>b.pct-a.pct).slice(0,5);
+  document.getElementById('homerList').innerHTML = homers.length ? homers.map(h=>`
+    <div class="rank-item"><span>${h.name}</span><div class="bar-bg"><div class="bar-fg" style="width:${h.pct}%"></div></div><span class="num">${h.pct}%</span></div>
+  `).join('') : '<div class="h2h-empty">Not enough games involving people\u2019s own teams yet.</div>';
+  renderPredictTable();
+  renderClosestSplits();
+}
+
+/* ---------- OVERVIEW ---------- */
+function renderOverview(){
+  const roster = enrichWeek(CURRENT_WEEK);
+  const top5 = roster.slice(0,5);
+  document.getElementById('ovStandings').innerHTML = top5.map((p,i)=>`
+    <div class="ov-mini-row"><span class="r">${i+1}</span><span>${p.name}</span><span class="p">${p.pts}</span></div>
+  `).join('');
+
+  const marquee = upcoming.slice(0,4);
+  document.getElementById('ovGames').innerHTML = marquee.map(g=>`
+    <div class="ov-game"><span>${g.a} vs ${g.b}</span><span class="split">${g.pctA}% / ${100-g.pctA}%</span></div>
+  `).join('');
+
+  const withMove = roster.map((p,i)=>({...p, rank:i+1, mv:moveParts(p.move)}));
+  const riser = withMove.filter(p=>p.mv.dir==='up').sort((a,b)=>b.mv.n-a.mv.n)[0];
+  const faller = withMove.filter(p=>p.mv.dir==='down').sort((a,b)=>b.mv.n-a.mv.n)[0];
+  document.getElementById('ovMovers').innerHTML = (riser || faller) ? `
+    ${riser ? `<div class="ov-mini-row"><span class="r" style="color:var(--green);">&#9650;</span><span>${riser.name}</span><span class="p" style="color:var(--green);">+${riser.mv.n}</span></div>` : ''}
+    ${faller ? `<div class="ov-mini-row"><span class="r" style="color:var(--red);">&#9660;</span><span>${faller.name}</span><span class="p" style="color:var(--red);">-${faller.mv.n}</span></div>` : ''}
+  ` : `<div style="color:var(--muted);font-size:12px;">No movement yet — check back after week 2.</div>`;
+
+  document.getElementById('ovHero').innerHTML = `
+    <div class="ov-hero"><div class="n">${computeConsensusAccuracy()}%</div><div class="l">CONSENSUS ACCURACY</div></div>
+    <div class="ov-hero"><div class="n">${roster[0].pts}</div><div class="l">LEADER'S POINTS</div></div>
+    <div class="ov-hero"><div class="n">${weeklyResults[CURRENT_WEEK]?.filter(g=>g.winner && g.winner!==g.favorite).length || 0}</div><div class="l">UPSETS THIS WEEK</div></div>
+    <div class="ov-hero"><div class="n">Wk ${CURRENT_WEEK}</div><div class="l">OF ${TOTAL_WEEKS}</div></div>
+  `;
+
+  const selfSel = document.getElementById('ovScorecardSelect');
+  if(selfSel.options.length <= 1){
+    selfSel.innerHTML = '<option value="">Select yourself...</option>' +
+      alphaRoster().map(p=>`<option value="${p.name}">${p.name}</option>`).join('');
+  }
+
+  const completions = roster.map(p=>({name:p.name, comp:playerCompletion(p.name)}));
+  const incomplete = completions.filter(c=>c.comp.done < c.comp.total);
+  const pendingEntry = (weeklyResults[ENTRY_WEEK] || []).filter(g=>!g.winner).length;
+  document.getElementById('ovAttention').innerHTML = `
+    <div class="ov-attn-row">
+      <span><span class="badge ${incomplete.length?'':'ok'}">${incomplete.length}</span>Incomplete submissions</span>
+      <a data-goto="io">Review &rarr;</a>
+    </div>
+    <div class="ov-attn-row">
+      <span><span class="badge ${pendingEntry?'':'ok'}">${pendingEntry}</span>Week ${ENTRY_WEEK} results not yet entered</span>
+      <a data-goto="enter">Enter now &rarr;</a>
+    </div>
+    <div class="ov-attn-row">
+      <span><span class="badge ok">${roster.length}</span>Total players loaded</span>
+      <a data-goto="io">Manage &rarr;</a>
+    </div>
+  `;
+}
+
+/* ---------- SCORECARD + HEAD-TO-HEAD ---------- */
+// Real current streak: consecutive correct picks counting back from the most
+// recently decided game.
+function streakFor(name){
+  const picks = picksForPlayer(name).filter(g=>g.winner);
+  let streak = 0;
+  for(let i=picks.length-1; i>=0; i--){
+    if(picks[i].pick && picks[i].pick===picks[i].winner) streak++;
+    else break;
+  }
+  return streak;
+}
+function getPlayerProfile(name){
+  const roster = enrichWeek(CURRENT_WEEK);
+  const idx = roster.findIndex(p=>p.name===name);
+  const p = roster[idx];
+  const n = roster.length;
+  const percentile = Math.round(((n-idx)/n)*1000)/10;
+  // Use the full season for pick-tendency stats (chalk/homer), since every
+  // pick was submitted before the season started \u2014 not just weeks played so far.
+  const picks = picksForPlayer(name, fullGameSet);
+  const madePicks = picks.filter(g=>g.pick); // pick-tendency stats only need a pick made, not a result yet
+  const decided = picks.filter(g=>g.winner); // accuracy stats need a real result
+  const correct = decided.filter(g=>g.pick && g.pick===g.winner);
+  const accuracy = decided.length ? Math.round(correct.length/decided.length*100) : null;
+  const chalkPicks = madePicks.filter(g=>g.pick===g.favorite);
+  const chalkPct = madePicks.length ? Math.round(chalkPicks.length/madePicks.length*100) : null;
+  const ownTeamGames = madePicks.filter(g=>g.a===p.team || g.b===p.team);
+  const homerPct = ownTeamGames.length ? Math.round(ownTeamGames.filter(g=>g.pick===p.team).length/ownTeamGames.length*100) : null;
+  const byTeam = {};
+  decided.forEach(g=>{
+    if(!byTeam[g.pick]) byTeam[g.pick] = {correct:0, total:0};
+    byTeam[g.pick].total++;
+    if(g.pick===g.winner) byTeam[g.pick].correct++;
+  });
+  const teamAccuracy = Object.entries(byTeam).map(([team,v])=>({team, pct:Math.round(v.correct/v.total*100), n:v.total}))
+    .sort((a,b)=>b.pct-a.pct);
+  const trend = [];
+  for(let w=1; w<=CURRENT_WEEK; w++){
+    const s = weekSnapshots[w].find(x=>x.name===name);
+    trend.push(s ? s.pts : 0);
+  }
+  return {name, team:p.team, rank:idx+1, pts:p.pts, record:p.record, percentile, accuracy, chalkPct, homerPct,
+          teamAccuracy, trend, streak:streakFor(name), champ:champPicks[name]};
+}
+
+function scorecardStoryline(prof){
+  const parts = [];
+  if(prof.accuracy === null){
+    parts.push(`${prof.name} is all locked in for the season, sitting at #${prof.rank} \u2014 no results yet to grade the picks against.`);
+  } else {
+    parts.push(`${prof.name} sits at #${prof.rank} with ${prof.pts} points (${prof.record}), better than ${prof.percentile}% of the field.`);
+  }
+  if(prof.homerPct !== null){
+    parts.push(prof.homerPct >= 70
+      ? `Rides hard for ${prof.team} \u2014 picks them ${prof.homerPct}% of the time they've played.`
+      : `Surprisingly objective about ${prof.team}, only backing them ${prof.homerPct}% of the time.`);
+  }
+  if(prof.chalkPct !== null){
+    parts.push(prof.chalkPct >= 65
+      ? `Mostly plays it safe, siding with the favorite ${prof.chalkPct}% of the time.`
+      : `Not afraid of an upset pick \u2014 only goes chalk ${prof.chalkPct}% of the time.`);
+  }
+  return parts.join(' ');
+}
+
+function renderScorecardInto(elId, name){
+  const prof = getPlayerProfile(name);
+  const maxTrend = Math.max(...prof.trend, 1);
+  const el = document.getElementById(elId);
+  el.innerHTML = `
+    <div class="sc-card">
+      <div class="sc-hero">
+        <div class="av">${initials(prof.name)}</div>
+        <div class="id"><div class="nm">${prof.name}</div><div class="tm">${prof.team} &middot; Champ pick: ${prof.champ||'\u2013'}</div></div>
+        <div class="rankbadge"><div class="n">#${prof.rank}</div><div class="l">Rank</div></div>
+      </div>
+      <div class="sc-tiles">
+        <div class="sc-tile"><div class="n">${prof.pts}</div><div class="l">Points</div></div>
+        <div class="sc-tile"><div class="n">${prof.percentile}</div><div class="l">Percentile</div></div>
+        <div class="sc-tile"><div class="n">${prof.accuracy===null?'\u2013':prof.accuracy+'%'}</div><div class="l">Accuracy</div></div>
+        <div class="sc-tile"><div class="n">${prof.streak}</div><div class="l">Streak</div></div>
+        <div class="sc-tile"><div class="n">${prof.homerPct===null?'\u2013':prof.homerPct+'%'}</div><div class="l">Homer idx</div></div>
+      </div>
+      <div class="sc-body">
+        <div class="sc-storyline">${scorecardStoryline(prof)}</div>
+        <div class="sc-subtitle">Rank trend, weeks 1&ndash;${CURRENT_WEEK}</div>
+        <div class="sc-trend">${prof.trend.map(v=>`<i style="height:${Math.max(6,(v/maxTrend)*50)}px"></i>`).join('')}</div>
+        <div class="sc-trend-labels">${prof.trend.map((_,i)=>`<span>Wk${i+1}</span>`).join('')}</div>
+        <div class="sc-subtitle">Best teams to pick (this season's sample)</div>
+        <div class="sc-team-bars">${prof.teamAccuracy.slice(0,5).map(t=>`
+          <div class="sc-team-row"><span>${t.team}</span>
+            <div class="bar-bg"><div class="bar-fg ${t.pct<50?'bad':''}" style="width:${t.pct}%"></div></div>
+            <span>${t.pct}% (${t.n})</span></div>
+        `).join('') || '<div style="color:var(--muted);font-size:11.5px;">Not enough decided games yet.</div>'}</div>
+      </div>
+    </div>
+  `;
+}
+
+let h2hScope = 'ytd';
+function scopeGames(){
+  if(h2hScope==='season') return fullGameSet;
+  if(h2hScope==='ytd') return sampleGames;
+  const wk = parseInt(h2hScope.replace('wk',''));
+  return fullGameSet.filter(g=>g.week===wk);
+}
+function renderH2HScopeSelector(){
+  const opts = [
+    {v:'ytd', l:'Season to date'},
+    {v:'season', l:'Entire season'},
+    ...Array.from({length:CURRENT_WEEK}, (_,i)=>({v:`wk${i+1}`, l:`Week ${i+1}`})),
+  ];
+  return `<div class="crm-filters" id="h2hScopeSel" style="margin-bottom:12px;">
+    ${opts.map(o=>`<button class="crm-filter ${h2hScope===o.v?'active':''}" data-scope="${o.v}">${o.l}</button>`).join('')}
+  </div>`;
+}
+
+function renderHeadToHead(nameA, nameB){
+  const elH2H = document.getElementById('scH2H');
+  if(!nameB){ elH2H.innerHTML = ''; return; }
+  const a = getPlayerProfile(nameA), b = getPlayerProfile(nameB);
+  const games = scopeGames();
+  const picksA = picksForPlayer(nameA, games), picksB = picksForPlayer(nameB, games);
+  let agree = 0, compared = 0;
+  const disagreements = [];
+  picksA.forEach((g,i)=>{
+    const pb = picksB[i];
+    if(!g.pick || !pb.pick) return;
+    compared++;
+    if(g.pick === pb.pick) agree++;
+    else disagreements.push({...g, pickA:g.pick, pickB:pb.pick});
+  });
+  const agreePct = compared ? Math.round(agree/compared*100) : 0;
+  const scopeNote = h2hScope==='season' ? 'across the full schedule, including games not yet played'
+    : h2hScope==='ytd' ? `through week ${CURRENT_WEEK}`
+    : `in week ${h2hScope.replace('wk','')} only`;
+
+  elH2H.innerHTML = `
+    <div class="section-title">Head to head</div>
+    ${renderH2HScopeSelector()}
+    <div class="h2h-wrap">
+      <div class="h2h-side">
+        <div class="nm">${a.name}</div><div class="tm">${a.team}</div>
+        <div class="h2h-stat"><span>Rank</span><b>#${a.rank}</b></div>
+        <div class="h2h-stat"><span>Points</span><b>${a.pts}</b></div>
+        <div class="h2h-stat"><span>Accuracy</span><b>${a.accuracy===null?"–":a.accuracy+"%"}</b></div>
+        <div class="h2h-stat"><span>Champ pick</span><b>${a.champ||'\u2013'}</b></div>
+      </div>
+      <div class="h2h-mid">
+        <div class="h2h-vs">VS</div>
+        <div class="h2h-agree"><div class="n">${agreePct}%</div><div class="l">Agree</div></div>
+        <div style="font-size:10.5px;color:var(--muted);text-align:center;">${a.pts>b.pts?a.name.split(' ')[0]:b.name.split(' ')[0]} leads by ${Math.abs(a.pts-b.pts)}</div>
+      </div>
+      <div class="h2h-side">
+        <div class="nm">${b.name}</div><div class="tm">${b.team}</div>
+        <div class="h2h-stat"><span>Rank</span><b>#${b.rank}</b></div>
+        <div class="h2h-stat"><span>Points</span><b>${b.pts}</b></div>
+        <div class="h2h-stat"><span>Accuracy</span><b>${b.accuracy===null?"–":b.accuracy+"%"}</b></div>
+        <div class="h2h-stat"><span>Champ pick</span><b>${b.champ||'\u2013'}</b></div>
+      </div>
+    </div>
+    <div class="section-title">Where they disagreed <span class="chip">${disagreements.length} of ${compared} shared games, ${scopeNote}</span></div>
+    ${disagreements.length ? `<div class="h2h-disagree-list">${disagreements.map(d=>`
+      <div class="h2h-drow">
+        <span class="g">Wk${d.week} &middot; ${d.a} @ ${d.b}</span>
+        <span class="pick ${!d.winner?'':d.pickA===d.winner?'right':'wrong'}">${a.name.split(' ')[0]}: ${d.pickA}${!d.winner?' (pending)':''}</span>
+        <span class="pick ${!d.winner?'':d.pickB===d.winner?'right':'wrong'}">${b.name.split(' ')[0]}: ${d.pickB}${!d.winner?' (pending)':''}</span>
+      </div>`).join('')}</div>` : `<div class="h2h-empty">They agreed on every shared game in this view &mdash; no disagreements to show.</div>`}
+  `;
+  document.getElementById('h2hScopeSel').addEventListener('click', (e)=>{
+    const btn = e.target.closest('[data-scope]');
+    if(!btn) return;
+    h2hScope = btn.dataset.scope;
+    renderHeadToHead(nameA, nameB);
+  });
+
+}
+
+function populateScorecardSelects(){
+  const opts = alphaRoster().map(p=>`<option value="${p.name}">${p.name}</option>`).join('');
+  document.getElementById('scSelfSelect').innerHTML = '<option value="">Select yourself...</option>' + opts;
+  document.getElementById('scOppSelect').innerHTML = '<option value="">Select an opponent...</option>' + opts;
+}
+
+function refreshScorecardView(){
+  const selfName = document.getElementById('scSelfSelect').value;
+  const oppName = document.getElementById('scOppSelect').value;
+  document.getElementById('scEmpty').style.display = selfName ? 'none' : 'block';
+  if(!selfName){
+    document.getElementById('scSelfCard').innerHTML = '';
+    document.getElementById('scH2H').innerHTML = '';
+    return;
+  }
+  renderScorecardInto('scSelfCard', selfName);
+  renderHeadToHead(selfName, oppName===selfName ? '' : oppName);
+}
+
+/* ---------- CRM: MANAGE PLAYERS ---------- */
+// Sample game set for the picks drawer: every real matchup we already have
+// results for (weeks 1-3), so "their pick vs actual winner" is grounded in
+// data that exists elsewhere in the mockup rather than invented separately.
+let sampleGames = SEASON.games.filter(g=>g.week<=CURRENT_WEEK);
+// full season set adds the upcoming (undecided) week so "entire season" scope has something beyond YTD
+const fullGameSet = SEASON.games;
+
+// REAL submitted picks, pulled from the 21 family submission files.
+// Index order matches sampleGames (the Week 1 schedule).
+const realPicks = {
+  "BRANDON ODOM (Auburn)": ["Missouri", "Oklahoma", "Alabama", "Arkansas", "Auburn", "Florida", "Georgia", "Kentucky", "LSU", "Ole Miss"],
+  "Bill (Auburn)": ["Missouri", "Oklahoma", "Alabama", "Arkansas", "Auburn", "Florida", "Georgia", "Kentucky", "LSU", "Ole Miss"],
+  "ELLIE ODOM (Auburn)": ["Missouri", "Oklahoma", "Alabama", "Arkansas", "Auburn", "Florida", "Georgia", "Kentucky", "LSU", "Ole Miss"],
+  "JUDSON ODOM (Auburn)": ["Missouri", "Oklahoma", "Alabama", "Arkansas", "Auburn", "Florida", "Georgia", "Kentucky", "LSU", "Ole Miss"],
+  "Madison Palmer (Georgia Tech) (yuck)": ["Missouri", "Oklahoma", "Alabama", "Arkansas", "Auburn", "Florida", "Georgia", "Kentucky", "LSU", "Ole Miss"],
+  "Matt Watford (Auburn)": ["Missouri", "Oklahoma", "Alabama", "Arkansas", "Auburn", "Florida", "Georgia", "Kentucky", "LSU", "Ole Miss"],
+  "Nate Palmer (Thunderbirds)": ["Missouri", "Oklahoma", "Alabama", "Arkansas", "Auburn", "Florida", "Georgia", "Kentucky", "LSU", "Ole Miss"],
+  "Rusty (Auburn)": ["Missouri", "Oklahoma", "Alabama", "Arkansas", "Auburn", "Florida", "Georgia", "Kentucky", "LSU", "Ole Miss"],
+  "TUCKER ODOM (Auburn)": ["Missouri", "Oklahoma", "Alabama", "Arkansas", "Auburn", "Florida", "Georgia", "Kentucky", "LSU", "Ole Miss"],
+  "Tom White (Auburn)": ["Missouri", "Oklahoma", "Alabama", "Arkansas", "Auburn", "Florida", "Georgia", "Kentucky", "LSU", "Ole Miss"],
+  "Watford (Auburn)": ["Missouri", "Oklahoma", "Alabama", "Arkansas", "Auburn", "Florida", "Georgia", "Kentucky", "LSU", "Ole Miss"],
+  "Will Palmer (Auburn)": ["Missouri", "Oklahoma", "Alabama", "Arkansas", "Auburn", "Florida", "Georgia", "Kentucky", "LSU", "Ole Miss"],
+  "Abbie Palmer (Auburn)": ["Missouri", "Oklahoma", "Alabama", "Arkansas", "Auburn", "Florida", "Georgia", "Kentucky", "LSU", "Louisville"],
+  "Andrew McCain (Auburn)": ["Missouri", "Oklahoma", "Alabama", "Arkansas", "Auburn", "Florida", "Georgia", "Kentucky", "LSU", "Louisville"],
+  "Cameron Watford (Auburn)": ["Missouri", "Oklahoma", "Alabama", "Arkansas", "Auburn", "Florida", "Georgia", "Kentucky", "Clemson", "Ole Miss"],
+  "Daddy Butch (Auburn)": ["Missouri", "Oklahoma", "Alabama", "Arkansas", "Auburn", "Florida", "Georgia", "Kentucky", "Clemson", "Ole Miss"],
+  "Kyle McCain (Auburn)": ["Missouri", "Oklahoma", "Alabama", "Arkansas", "Auburn", "Florida", "Georgia", "Kentucky", "LSU", "Louisville"],
+  "Mattie Palmer (Auburn)": ["Missouri", "Oklahoma", "Alabama", "Arkansas", "Auburn", "Florida", "Georgia", "Kentucky", "Clemson", "Ole Miss"],
+  "Millie Palmer (Auburn)": ["Missouri", "Oklahoma", "Alabama", "Arkansas", "Auburn", "Florida", "Georgia", "Kentucky", "Clemson", "Ole Miss"],
+  "Rylin Watford (Auburn)": ["Missouri", "Oklahoma", "Alabama", "Arkansas", "Auburn", "Florida", "Georgia", "Kentucky", "Clemson", "Ole Miss"],
+  "Scott Palmer (Auburn)": ["Missouri", "Oklahoma", "Alabama", "Arkansas", "Auburn", "Florida", "Georgia", "Kentucky", "Clemson", "Louisville"],
+};
+
+function picksForPlayer(name, games){
+  games = games || sampleGames;
+  const mine = SEASON.picks[name] || [];
+  return games.map(g => {
+    const gi = SEASON.games.indexOf(g); // real picks are indexed against the full schedule
+    return {...g, pick: gi >= 0 ? (mine[gi] || null) : null};
+  });
+}
+
+function playerCompletion(name){
+  // Completion is a submission-quality check for the whole season's picks,
+  // not just the weeks played so far — checked against the full schedule.
+  const picks = picksForPlayer(name, fullGameSet);
+  const done = picks.filter(p=>p.pick).length;
+  return {done, total: picks.length};
+}
+
+function renderCrmStats(){
+  const roster = enrichWeek(CURRENT_WEEK);
+  const completions = roster.map(p=>playerCompletion(p.name));
+  const avgPct = Math.round(completions.reduce((s,c)=>s+c.done/c.total,0)/completions.length*100);
+  const incompleteCount = completions.filter(c=>c.done < c.total).length;
+  document.getElementById('crmTotalPlayers').textContent = roster.length;
+  document.getElementById('crmAvgComplete').textContent = avgPct + '%';
+  document.getElementById('crmIncomplete').textContent = incompleteCount;
+  document.getElementById('crmLastImport').textContent = '2h ago';
+}
+
+let crmFilter = 'all';
+let crmQuery = '';
+function renderCrmTable(){
+  const ranked = enrichWeek(CURRENT_WEEK);
+  // Manage Players is a lookup tool, not a leaderboard, so it defaults to
+  // alphabetical — the Rank column still shows each person's standing.
+  let rows = ranked.map((p,i)=>({...p, rank:i+1, comp:playerCompletion(p.name)}))
+    .sort((a,b)=>a.name.localeCompare(b.name));
+  if(crmFilter==='incomplete') rows = rows.filter(p=>p.comp.done < p.comp.total);
+  if(crmFilter==='auburn') rows = rows.filter(p=>p.team==='Auburn');
+  if(crmQuery) rows = rows.filter(p=>(p.name+p.team).toLowerCase().includes(crmQuery.toLowerCase()));
+
+  const table = document.getElementById('crmTable');
+  let head = `<tr><th>Player</th><th>Team</th><th>Champ Pick</th><th>Points</th><th>Rank</th><th>Picks complete</th><th></th></tr>`;
+  let body = rows.map(p=>{
+    const pct = Math.round(p.comp.done/p.comp.total*100);
+    const warn = p.comp.done < p.comp.total;
+    return `<tr data-name="${p.name}">
+      <td><div class="crm-name-cell"><div class="avatar">${initials(p.name)}</div><span style="font-weight:600;">${p.name}</span></div></td>
+      <td style="color:var(--muted);">${p.team}</td>
+      <td>${champPicks[p.name]||'\u2013'}</td>
+      <td><span class="tot-pts">${p.pts}</span></td>
+      <td>#${p.rank}</td>
+      <td><div class="crm-complete ${warn?'warn':''}">
+            <div class="bar-bg"><div class="bar-fg" style="width:${pct}%"></div></div>
+            <span>${p.comp.done}/${p.comp.total}</span>${warn?'<span class="crm-badge">MISSING</span>':''}
+          </div></td>
+      <td class="crm-chev">&#8250;</td>
+    </tr>`;
+  }).join('');
+  table.innerHTML = head + body;
+  table.querySelectorAll('tbody tr, tr[data-name]').forEach(tr=>{
+    tr.addEventListener('click', ()=> openDrawer(tr.dataset.name));
+  });
+}
+
+/* ---- drawer ---- */
+let drawerQuery = '';
+
+/* ---------- EDIT PLAYER ---------- */
+const ALL_TEAMS = ["Alabama","Arkansas","Auburn","Florida","Georgia","Kentucky","LSU","Miss State",
+  "Missouri","Oklahoma","Ole Miss","South Carolina","Tennessee","Texas","Texas A&M","Vanderbilt",
+  "Georgia Tech","Thunderbirds","Unaffiliated"];
+
+function openEditForm(name){
+  const p = SEASON.roster.find(r=>r.name===name);
+  const host = document.getElementById('editFormHost');
+  host.innerHTML = `
+    <div class="edit-form">
+      <div class="fld"><label>Display name</label>
+        <input id="edName" value="${name.replace(/"/g,'&quot;')}"></div>
+      <div class="fld"><label>Favorite team</label>
+        <select id="edTeam">${ALL_TEAMS.map(t=>`<option ${t===p.team?'selected':''}>${t}</option>`).join('')}</select></div>
+      <div class="fld"><label>SEC Champion pick</label>
+        <select id="edChamp">${ALL_TEAMS.slice(0,16).map(t=>`<option ${t===SEASON.champ[name]?'selected':''}>${t}</option>`).join('')}</select></div>
+      <div class="edit-actions">
+        <button class="save" id="edSave">Save changes</button>
+        <button class="cancel" id="edCancel">Cancel</button>
+      </div>
+    </div>`;
+  document.getElementById('edCancel').onclick = ()=>{ host.innerHTML=''; };
+  document.getElementById('edSave').onclick = ()=>savePlayerEdit(name);
+}
+
+function savePlayerEdit(oldName){
+  const newName = document.getElementById('edName').value.trim();
+  const newTeam = document.getElementById('edTeam').value;
+  const newChamp = document.getElementById('edChamp').value;
+  if(!newName){ alert('Name cannot be blank.'); return; }
+  if(newName !== oldName && SEASON.roster.some(r=>r.name===newName)){
+    alert('Another player already uses that name.'); return;
+  }
+  // apply across every structure keyed by name so nothing orphans
+  const row = SEASON.roster.find(r=>r.name===oldName);
+  row.name = newName; row.team = newTeam;
+  if(newName !== oldName){
+    SEASON.picks[newName] = SEASON.picks[oldName]; delete SEASON.picks[oldName];
+    delete SEASON.champ[oldName];
+  }
+  SEASON.champ[newName] = newChamp;
+
+  // rebuild everything that derives from the roster
+  buildWeekSnapshots();
+  renderStandingsTable();
+  renderCrmStats();
+  renderCrmTable();
+  renderOverview();
+  renderAnalytics();
+  populateScorecardSelects();
+  openDrawer(newName); // reopen on the updated record
+}
+
+function openDrawer(name){
+  const roster = enrichWeek(CURRENT_WEEK);
+  const idx = roster.findIndex(p=>p.name===name);
+  const p = roster[idx];
+  const comp = playerCompletion(name);
+
+  document.getElementById('drawerProfile').innerHTML = `
+    <div class="av">${initials(name)}</div>
+    <div><div class="nm">${name}</div><div class="tm">${p.team} &middot; Rank #${idx+1}</div></div>
+    <button class="edit-btn" id="editPlayerBtn">Edit</button>
+  `;
+  document.getElementById('editFormHost').innerHTML = '';
+  document.getElementById('editPlayerBtn').addEventListener('click', ()=>openEditForm(name));
+  document.getElementById('drawerStats').innerHTML = `
+    <div class="ds"><div class="n">${p.pts}</div><div class="l">Points</div></div>
+    <div class="ds"><div class="n">${p.record}</div><div class="l">Record</div></div>
+    <div class="ds"><div class="n">${champPicks[name]||'\u2013'}</div><div class="l">Champ pick</div></div>
+    <div class="ds"><div class="n" style="${comp.done<comp.total?'color:var(--crimson);':''}">${comp.done}/${comp.total}</div><div class="l">Complete</div></div>
+  `;
+  drawerQuery = '';
+  document.getElementById('picksSearch').value = '';
+  document.getElementById('picksCount').textContent = `(${comp.total} games \u2014 scroll to see all)`;
+  renderPicksTable(name);
+  document.getElementById('playerDrawer').classList.add('open');
+  document.getElementById('drawerBackdrop').classList.add('open');
+  document.getElementById('playerDrawer').dataset.name = name;
+}
+function closeDrawer(){
+  document.getElementById('playerDrawer').classList.remove('open');
+  document.getElementById('drawerBackdrop').classList.remove('open');
+}
+
+const drawerPicksOverride = {}; // name -> {gameIndex: 'a'|'b'}
+function renderPicksTable(name){
+  let picks = picksForPlayer(name, fullGameSet).map((g,i)=>{
+    const override = drawerPicksOverride[name]?.[i];
+    if(override) return {...g, pick: override==='a'?g.a:g.b};
+    return g;
+  });
+  if(drawerQuery){
+    picks = picks.filter((g,i)=> (g.a+g.b).toLowerCase().includes(drawerQuery.toLowerCase()));
+  }
+  const table = document.getElementById('picksTable');
+  table.innerHTML = `<tr><th>Wk</th><th>Matchup</th><th>Pick</th><th></th></tr>` +
+    picksForPlayer(name, fullGameSet).map((g,i)=>{
+      const override = drawerPicksOverride[name]?.[i];
+      const pick = override ? (override==='a'?g.a:g.b) : g.pick;
+      if(drawerQuery && !(g.a+g.b).toLowerCase().includes(drawerQuery.toLowerCase())) return '';
+      const correct = pick ? pick===g.winner : null;
+      return `<tr data-i="${i}">
+        <td>${g.week}</td>
+        <td>${g.a} @ ${g.b}</td>
+        <td><span class="pick-editable ${pick?'':'empty'}" data-i="${i}">${pick||'No pick \u2014 click to set'}</span></td>
+        <td>${correct===null?'<span class="result-icon pending">&#8212;</span>':correct?'<span class="result-icon ok">&#10003;</span>':'<span class="result-icon no">&#10007;</span>'}</td>
+      </tr>`;
+    }).filter(Boolean).join('');
+
+  table.querySelectorAll('.pick-editable').forEach(cell=>{
+    cell.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      const i = parseInt(cell.dataset.i);
+      const g = picksForPlayer(name, fullGameSet)[i];
+      const td = cell.closest('td');
+      td.innerHTML = `<div class="pick-toggle">
+        <button data-side="a">${g.a}</button>
+        <button data-side="b">${g.b}</button>
+      </div>`;
+      td.querySelectorAll('button').forEach(btn=>{
+        btn.addEventListener('click', ()=>{
+          if(!drawerPicksOverride[name]) drawerPicksOverride[name] = {};
+          drawerPicksOverride[name][i] = btn.dataset.side;
+          renderPicksTable(name);
+        });
+      });
+    });
+  });
+}
+
+/* ---- import modal ---- */
+function openImportModal(){
+  document.getElementById('importBody').innerHTML = `
+    <div class="import-drop" id="importDrop">
+      <b>Drop a submission file here</b>xlsx, csv, or pdf &mdash; or click to browse
+      <input type="file" id="importFile" style="display:none" accept=".xlsx,.csv,.pdf">
+    </div>
+  `;
+  document.getElementById('importDrop').addEventListener('click', ()=> document.getElementById('importFile').click());
+  document.getElementById('importFile').addEventListener('change', (e)=>{
+    const f = e.target.files[0];
+    if(!f) return;
+    const guessedName = f.name.replace(/[_-]/g,' ').replace(/\.(xlsx|csv|pdf)$/i,'').replace(/submission/i,'').trim();
+    document.getElementById('importBody').innerHTML = `
+      <div class="import-preview">
+        <div class="row"><span>File</span><b>${f.name}</b></div>
+        <div class="row"><span>Detected name</span><b>${guessedName || 'Unrecognized \u2014 confirm manually'}</b></div>
+        <div class="row"><span>Picks parsed</span><b>120 / 120</b></div>
+        <div class="row"><span>Champion pick</span><b>Georgia</b></div>
+        <div class="row"><span>Status</span><b style="color:var(--green);">Ready to add</b></div>
+      </div>
+      <div class="import-actions">
+        <button class="btn crimson" id="importConfirm">Add to roster</button>
+        <button class="btn ghost" id="importCancel">Cancel</button>
+      </div>
+    `;
+    document.getElementById('importConfirm').addEventListener('click', closeImportModal);
+    document.getElementById('importCancel').addEventListener('click', openImportModal);
+  });
+  document.getElementById('importBackdrop').classList.add('open');
+}
+function closeImportModal(){
+  document.getElementById('importBackdrop').classList.remove('open');
+}
+
+// Downloads a fresh copy of THIS SAME page with the current (edited) SEASON
+// data baked in, by re-fetching the page's own original source (so we get a
+// clean copy, not the live DOM) and swapping just the data payload.
+async function exportUpdatedSite(){
+  const btn = document.getElementById('downloadSiteBtn');
+  const originalLabel = btn.textContent;
+  btn.textContent = 'Preparing download\u2026';
+  btn.disabled = true;
+  try{
+    const res = await fetch(window.location.href, {cache:'no-store'});
+    if(!res.ok) throw new Error('Could not re-fetch the page (status '+res.status+')');
+    const originalHtml = await res.text();
+    const newSeasonJson = JSON.stringify(SEASON);
+    const marker = /const SEASON = \{.*?\};\n/s;
+    if(!marker.test(originalHtml)) throw new Error('Could not find the data section in the page to update');
+    const updated = originalHtml.replace(marker, `const SEASON = ${newSeasonJson};\n`);
+    const blob = new Blob([updated], {type:'text/html'});
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'index.html';
+    link.click();
+    btn.textContent = 'Downloaded \u2714';
+    setTimeout(()=>{ btn.textContent = originalLabel; btn.disabled = false; }, 2200);
+  } catch(err){
+    alert('Download failed: ' + err.message + '\n\nThis works when the page is hosted (like on GitHub Pages) \u2014 it may not work opening the file directly from your computer.');
+    btn.textContent = originalLabel;
+    btn.disabled = false;
+  }
+}
+
+function exportFullDataset(){
+  const roster = enrichWeek(CURRENT_WEEK);
+  const wb = XLSX.utils.book_new();
+
+  // --- Standings sheet ---
+  const standingsRows = [['Rank','Name','Team','Points','Record','Games','SEC Champ Pick']];
+  roster.forEach((p,i)=>{
+    const [w,l] = p.record.split('-').map(Number);
+    standingsRows.push([i+1, p.name, p.team, p.pts, p.record, w+l, champPicks[p.name]||'']);
+  });
+  const wsStandings = XLSX.utils.aoa_to_sheet(standingsRows);
+  wsStandings['!cols'] = [{wch:6},{wch:26},{wch:14},{wch:8},{wch:9},{wch:8},{wch:16}];
+  XLSX.utils.book_append_sheet(wb, wsStandings, 'Standings');
+
+  // --- Picks matrix sheet: one row per person, one column per game ---
+  // Uses the full season schedule, not just weeks played so far — picks
+  // were all submitted before the season started, so every game has one.
+  const allGames = fullGameSet;
+  const picksHeader = ['Name','Team','SEC Champ Pick', ...allGames.map(g=>`Wk${g.week}: ${g.a} vs ${g.b}`)];
+  const picksRows = [picksHeader];
+  roster.forEach(p=>{
+    const picks = picksForPlayer(p.name, fullGameSet);
+    picksRows.push([p.name, p.team, champPicks[p.name]||'', ...picks.map(g=>g.pick||'')]);
+  });
+  const wsPicks = XLSX.utils.aoa_to_sheet(picksRows);
+  wsPicks['!cols'] = [{wch:22},{wch:12},{wch:14}, ...allGames.map(()=>({wch:14}))];
+  XLSX.utils.book_append_sheet(wb, wsPicks, 'Submissions (Picks)');
+
+  // --- Weekly results sheet: every scheduled game and its result, if entered ---
+  const resultsRows = [['Week','Date','Home','Away','Favorite','Winner','Score','Status']];
+  Object.keys(weeklyResults).map(Number).sort((a,b)=>a-b).forEach(w=>{
+    weeklyResults[w].forEach(g=>{
+      resultsRows.push([w, g.when, g.a, g.b, g.favorite, g.winner||'', g.score||'', g.winner?'Final':'Not yet entered']);
+    });
+  });
+  const wsResults = XLSX.utils.aoa_to_sheet(resultsRows);
+  wsResults['!cols'] = [{wch:6},{wch:10},{wch:16},{wch:16},{wch:14},{wch:14},{wch:10},{wch:16}];
+  XLSX.utils.book_append_sheet(wb, wsResults, 'Weekly Results');
+
+  // --- Cover / summary sheet, placed first ---
+  const summaryRows = [
+    ['2026-2027 SEC Family Pick\u2019em \u2014 Full Export'],
+    ['Generated', new Date().toLocaleString()],
+    ['Players', roster.length],
+    ['Current week', CURRENT_WEEK || 'Preseason \u2014 no results entered yet'],
+    [],
+    ['Sheet', 'Contents'],
+    ['Standings', 'Current rank, points, and record for every player'],
+    ['Submissions (Picks)', 'Every player\u2019s pick for every scheduled game, plus their SEC Champion pick'],
+    ['Weekly Results', 'The full schedule with actual winners as they\u2019re entered \u2014 blank until a result is in'],
+  ];
+  const wsSummary = XLSX.utils.aoa_to_sheet(summaryRows);
+  wsSummary['!cols'] = [{wch:20},{wch:55}];
+  XLSX.utils.book_append_sheet(wb, wsSummary, 'Summary');
+  wb.SheetNames.unshift(wb.SheetNames.pop()); // move Summary to the front
+
+  const stamp = new Date().toISOString().slice(0,10);
+  XLSX.writeFile(wb, `sec-pickem-export-${stamp}.xlsx`);
+}
+
+document.addEventListener('click', (e)=>{
+  const goto = e.target.closest('[data-goto]');
+  if(!goto) return;
+  switchView(goto.dataset.goto);
+});
+
+/* ---------- Overview -> Scorecard shortcut ---------- */
+document.getElementById('ovScorecardGo').addEventListener('click', ()=>{
+  const name = document.getElementById('ovScorecardSelect').value;
+  if(!name) return;
+  switchView("scorecard");
+  document.getElementById('scSelfSelect').value = name;
+  refreshScorecardView();
+});
+
+/* ---------- Scorecard listeners ---------- */
+document.getElementById('scSelfSelect').addEventListener('change', refreshScorecardView);
+document.getElementById('scOppSelect').addEventListener('change', refreshScorecardView);
+
+/* ---------- CRM listeners ---------- */
+document.getElementById('crmSearch').addEventListener('input', (e)=>{
+  crmQuery = e.target.value;
+  renderCrmTable();
+});
+document.getElementById('crmFilters').addEventListener('click', (e)=>{
+  const btn = e.target.closest('.crm-filter');
+  if(!btn) return;
+  document.querySelectorAll('.crm-filter').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  crmFilter = btn.dataset.f;
+  renderCrmTable();
+});
+document.getElementById('drawerClose').addEventListener('click', closeDrawer);
+document.getElementById('drawerBackdrop').addEventListener('click', closeDrawer);
+document.getElementById('picksSearch').addEventListener('input', (e)=>{
+  drawerQuery = e.target.value;
+  renderPicksTable(document.getElementById('playerDrawer').dataset.name);
+});
+document.getElementById('importBtn').addEventListener('click', openImportModal);
+document.getElementById('importClose').addEventListener('click', closeImportModal);
+document.getElementById('importBackdrop').addEventListener('click', (e)=>{
+  if(e.target.id==='importBackdrop') closeImportModal();
+});
+document.getElementById('exportBtn').addEventListener('click', exportFullDataset);
+document.getElementById('downloadSiteBtn').addEventListener('click', exportUpdatedSite);
+
+/* ---------- MORE SHEET (mobile) ---------- */
+function buildMoreSheet(){
+  const secondary = [...document.querySelectorAll('#nav button[data-tier="secondary"]')];
+  document.getElementById('moreList').innerHTML = secondary.map(b=>
+    `<button data-view="${b.dataset.view}">${b.innerHTML}<span class="chev">&#8250;</span></button>`
+  ).join('');
+  document.querySelectorAll('#moreList button').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      switchView(b.dataset.view);
+      closeMore();
+    });
+  });
+}
+function openMore(){
+  document.getElementById('moreSheet').classList.add('open');
+  document.getElementById('moreBackdrop').classList.add('open');
+}
+function closeMore(){
+  document.getElementById('moreSheet').classList.remove('open');
+  document.getElementById('moreBackdrop').classList.remove('open');
+}
+document.getElementById('moreTab').addEventListener('click', openMore);
+document.getElementById('moreBackdrop').addEventListener('click', closeMore);
+
+function switchView(view){
+  document.querySelectorAll('#nav button').forEach(b=>b.classList.remove('active'));
+  document.querySelector(`#nav button[data-view="${view}"]`)?.classList.add('active');
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-'+view)?.classList.add('active');
+  // if the chosen view lives in the More sheet, light up the More tab instead
+  const btn = document.querySelector(`#nav button[data-view="${view}"]`);
+  document.getElementById('moreTab').classList.toggle('active', btn?.dataset.tier === 'secondary');
+  window.scrollTo(0,0);
+}
+
+/* ---------- NAV ---------- */
+document.getElementById('nav').addEventListener('click', (e)=>{
+  const btn = e.target.closest('button[data-view]');
+  if(!btn) return;
+  switchView(btn.dataset.view);
+});
+
+buildWeekSnapshots(); // compute real standings from picks vs. entered results
+updateWeekLabels();
+renderWeekSelector('resultsWeekSel', renderResults, CURRENT_WEEK);
+renderStandingsTable();
+renderResults(CURRENT_WEEK);
+renderConsensus();
+renderWeekSelector('enterWeekSel', renderGames, ENTRY_WEEK, Math.max(...Object.keys(weeklyResults).map(Number)));
+renderGames(ENTRY_WEEK);
+updateProgress();
+renderMovers();
+renderAnalytics();
+renderOverview();
+renderCrmStats();
+renderCrmTable();
+populateScorecardSelects();
+buildMoreSheet();
+</script>
