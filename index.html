@@ -249,24 +249,6 @@ table.picks-table tr:last-child td{border-bottom:none;}
 .pick-toggle button.sel{background:var(--green-bg);border-color:var(--green);color:var(--green);}
 .result-icon.ok{color:var(--green);} .result-icon.no{color:var(--red);} .result-icon.pending{color:var(--muted);}
 
-/* import modal */
-.modal-backdrop{position:fixed;inset:0;background:rgba(11,31,58,.5);opacity:0;pointer-events:none;transition:opacity .15s;
-  z-index:60;display:flex;align-items:center;justify-content:center;}
-.modal-backdrop.open{opacity:1;pointer-events:auto;}
-.modal{background:var(--card);border-radius:12px;width:480px;max-width:92vw;max-height:85vh;overflow:hidden;display:flex;flex-direction:column;
-  box-shadow:0 20px 50px rgba(0,0,0,.3);}
-.modal-head{background:var(--navy);color:#fff;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;position:relative;}
-.modal-head h3{margin:0;font-size:15px;}
-.modal-head .drawer-close{position:static;}
-.modal-body{padding:20px;overflow-y:auto;}
-.import-drop{border:2px dashed var(--line);border-radius:10px;padding:36px 16px;text-align:center;color:var(--muted);font-size:13px;cursor:pointer;}
-.import-drop b{color:var(--navy);display:block;font-size:14px;margin-bottom:5px;}
-.import-preview{background:#F7F9FC;border:1px solid var(--line);border-radius:8px;padding:16px;margin-top:14px;}
-.import-preview .row{display:flex;justify-content:space-between;padding:5px 0;font-size:12.5px;border-bottom:1px solid var(--line);}
-.import-preview .row:last-child{border-bottom:none;}
-.import-preview .row b{color:var(--navy);}
-.import-actions{display:flex;gap:8px;margin-top:16px;}
-
 /* ---------- SCORECARD ---------- */
 .sc-selectrow{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;margin-bottom:18px;}
 .sc-select-group{display:flex;flex-direction:column;gap:5px;}
@@ -454,9 +436,6 @@ table.heat td.trend{font-weight:700;}
 .btn.crimson{background:var(--crimson);}
 .btn.ghost{background:#fff;border:1.5px solid var(--navy);color:var(--navy);}
 .btnrow{display:flex;gap:8px;flex-wrap:wrap;}
-.importedlist{margin-top:14px;border-top:1px solid var(--line);padding-top:12px;}
-.imp-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;font-size:12px;}
-.imp-row .status{background:var(--green-bg);color:var(--green);font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;}
 /* mobile header bar — hidden on desktop, shown by the mobile media query */
 .mobile-head{display:none;align-items:center;justify-content:space-between;gap:10px;
   background:var(--navy);color:#fff;margin:-14px -13px 14px;padding:12px 14px;}
@@ -575,9 +554,6 @@ table.heat td.trend{font-weight:700;}
   .weeksel{gap:6px;}
   .wk-chip{width:42px;height:40px;font-size:13.5px;}
 
-  .modal{width:100%;max-width:100%;border-radius:14px 14px 0 0;position:fixed;bottom:0;max-height:88vh;}
-  .modal-backdrop{align-items:flex-end;}
-
   .story-card{padding:17px 18px;}
   .story-card .story-headline{font-size:20px;}
   .story-card .story-body{font-size:13px;color:#E3E9F2;}
@@ -615,8 +591,10 @@ table.heat td.trend{font-weight:700;}
       <button data-view="scorecard" data-tier="primary" data-short="Scorecard">&#127183; Scorecard</button>
       <button data-view="upcoming" data-tier="secondary" data-short="This week">&#128197; This week</button>
       <button data-view="enter" data-tier="secondary" data-short="Enter">&#9989; Enter results</button>
+      <!-- "Manage players" has no visible nav button on purpose \u2014 it's reachable
+           only via a bookmarked link ending in #manage (see the hash-router below),
+           so it doesn't show up for anyone just browsing the shared site. -->
       <button data-view="analytics" data-tier="secondary" data-short="Analytics">&#129504; Analytics</button>
-      <button data-view="io" data-tier="secondary" data-short="Players">&#128100; Manage players</button>
     </div>
     <button class="more-tab" id="moreTab" data-short="More">&#9776; More</button>
     <div class="side-foot">
@@ -737,8 +715,8 @@ table.heat td.trend{font-weight:700;}
       </div>
       <div class="weeksel" id="enterWeekSel"></div>
       <div class="progress-card">
-        <div><div class="lbl">Games entered</div><div class="big" id="progLabel">9 / 13</div></div>
-        <div class="bar-track"><div class="bar-fill" id="progBar" style="width:69%"></div></div>
+        <div><div class="lbl">Games entered</div><div class="big" id="progLabel">&mdash;</div></div>
+        <div class="bar-track"><div class="bar-fill" id="progBar" style="width:0%"></div></div>
         <div class="autosave"><span class="dot"></span>Standings update live as you click</div>
       </div>
       <div class="game-list" id="gameList"></div>
@@ -782,7 +760,6 @@ table.heat td.trend{font-weight:700;}
         <div><h1>Manage players</h1><div class="sub">Every submission, one screen &mdash; search, drill into anyone, edit picks game by game</div></div>
         <div class="topbar-right">
           <button class="btn ghost" id="exportBtn">&#8681; Export full dataset</button>
-          <button class="btn crimson" id="importBtn">+ Import submission</button>
         </div>
       </div>
 
@@ -790,7 +767,6 @@ table.heat td.trend{font-weight:700;}
         <div class="crm-stat"><div class="n" id="crmTotalPlayers"></div><div class="l">Players</div></div>
         <div class="crm-stat"><div class="n" id="crmAvgComplete"></div><div class="l">Avg. picks complete</div></div>
         <div class="crm-stat warn"><div class="n" id="crmIncomplete"></div><div class="l">Incomplete submissions</div></div>
-        <div class="crm-stat"><div class="n" id="crmLastImport"></div><div class="l">Last import</div></div>
       </div>
 
       <div class="crm-toolbar">
@@ -823,14 +799,6 @@ table.heat td.trend{font-weight:700;}
         </div>
         <div class="drawer-save-note"><span class="dot"></span>Changes save automatically</div>
         <div class="picks-table-wrap"><table class="picks-table" id="picksTable"></table></div>
-      </div>
-    </div>
-
-    <!-- Import modal -->
-    <div class="modal-backdrop" id="importBackdrop">
-      <div class="modal">
-        <div class="modal-head"><h3>Import a submission</h3><button class="drawer-close" id="importClose">&times;</button></div>
-        <div class="modal-body" id="importBody"></div>
       </div>
     </div>
 
@@ -1147,6 +1115,7 @@ function updateProgress(){
 // Re-run every computed thing and re-render every view after a data edit,
 // so entering one result updates standings/analytics/everything immediately.
 function updateWeekLabels(){
+  document.getElementById('sfPlayers').textContent = `${SEASON.roster.length} players`;
   document.getElementById('sfWeek').textContent = `Week ${Math.max(CURRENT_WEEK,1)} of ${TOTAL_WEEKS}`;
   document.getElementById('mhWeek').textContent = `Week ${Math.max(CURRENT_WEEK,1)} \u00b7 ${SEASON.roster.length} players`;
 }
@@ -1206,34 +1175,6 @@ function renderMovers(){
       <div class="detail">Dropped ${faller.mv.n} spot${faller.mv.n>1?'s':''} &middot; now ${roster.indexOf(faller)+1}${ordinal(roster.indexOf(faller)+1)} place</div>
     </div>`;
 }
-const weeks6 = ["Wk1","Wk2","Wk3"];
-function heatColor(v,max){
-  const t = v/max;
-  const r = Math.round(255 - t*(255-30));
-  const g = Math.round(255 - t*(255-125));
-  const b = Math.round(255 - t*(255-70));
-  return `rgb(${r},${g},${b})`;
-}
-function renderHeat(){
-  const table = document.getElementById('heatTable');
-  let head = '<tr><th>Player</th>' + weeks6.map(w=>`<th>${w}</th>`).join('') + '<th>Trend</th></tr>';
-  let body = '';
-  baseRoster.slice(0,14).forEach(p=>{
-    const vals = weeks6.map((w,i)=>{
-      const wk = i+1;
-      const s = weekSnapshots[wk].find(x=>x.name===p.name);
-      const prevPts = wk>1 ? weekSnapshots[wk-1].find(x=>x.name===p.name).pts : 0;
-      return s ? Math.max(0, s.pts - prevPts) : 0;
-    });
-    const max = Math.max(...vals,1);
-    const trendUp = vals[vals.length-1] >= vals[0];
-    body += `<tr><td>${p.name}</td>` + vals.map(v=>`<td style="background:${heatColor(v,max)}">${v}</td>`).join('') +
-      `<td class="trend" style="color:${trendUp?'#1E7B34':'#B3261E'}">${trendUp?'&#9650;':'&#9660;'}</td></tr>`;
-  });
-  table.innerHTML = head + body;
-  const sw = document.getElementById('legendSw');
-  sw.innerHTML = [0,2,4,6,8].map(v=>`<div class="sw" style="background:${heatColor(v,8)}"></div>`).join('');
-}
 
 /* ---------- ANALYTICS ---------- */
 // Computed for real from every submitted pick and champion vote — not sample data.
@@ -1276,7 +1217,7 @@ function renderPredictTable(){
   table.innerHTML = head + body;
   const totalChamp = cumulativePredictions.reduce((s,t)=>s+t.champN,0);
   document.getElementById('predictFoot').textContent =
-    `${totalChamp} total SEC Champion votes cast across the group \u00b7 based on 21 submitted brackets`;
+    `${totalChamp} total SEC Champion votes cast across the group \u00b7 based on ${SEASON.roster.length} submitted brackets`;
 }
 
 // Real pick splits across the full schedule (picks are locked before the
@@ -1314,7 +1255,7 @@ function buildStories(){
   const stories = [];
   if(CURRENT_WEEK === 0){
     return [{
-      tag:"Preseason", headline:"21 players locked in their picks",
+      tag:"Preseason", headline:`${SEASON.roster.length} players locked in their picks`,
       body:"Everyone's tied at 0 with the season not yet underway. Enter Week 1's results once the games are final to get things moving."
     }];
   }
@@ -1464,7 +1405,6 @@ function renderOverview(){
   document.getElementById('ovAttention').innerHTML = `
     <div class="ov-attn-row">
       <span><span class="badge ${incomplete.length?'':'ok'}">${incomplete.length}</span>Incomplete submissions</span>
-      <a data-goto="io">Review &rarr;</a>
     </div>
     <div class="ov-attn-row">
       <span><span class="badge ${pendingEntry?'':'ok'}">${pendingEntry}</span>Week ${ENTRY_WEEK} results not yet entered</span>
@@ -1472,7 +1412,6 @@ function renderOverview(){
     </div>
     <div class="ov-attn-row">
       <span><span class="badge ok">${roster.length}</span>Total players loaded</span>
-      <a data-goto="io">Manage &rarr;</a>
     </div>
   `;
 }
@@ -1683,31 +1622,6 @@ let sampleGames = SEASON.games.filter(g=>g.week<=CURRENT_WEEK);
 // full season set adds the upcoming (undecided) week so "entire season" scope has something beyond YTD
 const fullGameSet = SEASON.games;
 
-// REAL submitted picks, pulled from the 21 family submission files.
-// Index order matches sampleGames (the Week 1 schedule).
-const realPicks = {
-  "BRANDON ODOM (Auburn)": ["Missouri", "Oklahoma", "Alabama", "Arkansas", "Auburn", "Florida", "Georgia", "Kentucky", "LSU", "Ole Miss"],
-  "Bill (Auburn)": ["Missouri", "Oklahoma", "Alabama", "Arkansas", "Auburn", "Florida", "Georgia", "Kentucky", "LSU", "Ole Miss"],
-  "ELLIE ODOM (Auburn)": ["Missouri", "Oklahoma", "Alabama", "Arkansas", "Auburn", "Florida", "Georgia", "Kentucky", "LSU", "Ole Miss"],
-  "JUDSON ODOM (Auburn)": ["Missouri", "Oklahoma", "Alabama", "Arkansas", "Auburn", "Florida", "Georgia", "Kentucky", "LSU", "Ole Miss"],
-  "Madison Palmer (Georgia Tech) (yuck)": ["Missouri", "Oklahoma", "Alabama", "Arkansas", "Auburn", "Florida", "Georgia", "Kentucky", "LSU", "Ole Miss"],
-  "Matt Watford (Auburn)": ["Missouri", "Oklahoma", "Alabama", "Arkansas", "Auburn", "Florida", "Georgia", "Kentucky", "LSU", "Ole Miss"],
-  "Nate Palmer (Thunderbirds)": ["Missouri", "Oklahoma", "Alabama", "Arkansas", "Auburn", "Florida", "Georgia", "Kentucky", "LSU", "Ole Miss"],
-  "Rusty (Auburn)": ["Missouri", "Oklahoma", "Alabama", "Arkansas", "Auburn", "Florida", "Georgia", "Kentucky", "LSU", "Ole Miss"],
-  "TUCKER ODOM (Auburn)": ["Missouri", "Oklahoma", "Alabama", "Arkansas", "Auburn", "Florida", "Georgia", "Kentucky", "LSU", "Ole Miss"],
-  "Tom White (Auburn)": ["Missouri", "Oklahoma", "Alabama", "Arkansas", "Auburn", "Florida", "Georgia", "Kentucky", "LSU", "Ole Miss"],
-  "Watford (Auburn)": ["Missouri", "Oklahoma", "Alabama", "Arkansas", "Auburn", "Florida", "Georgia", "Kentucky", "LSU", "Ole Miss"],
-  "Will Palmer (Auburn)": ["Missouri", "Oklahoma", "Alabama", "Arkansas", "Auburn", "Florida", "Georgia", "Kentucky", "LSU", "Ole Miss"],
-  "Abbie Palmer (Auburn)": ["Missouri", "Oklahoma", "Alabama", "Arkansas", "Auburn", "Florida", "Georgia", "Kentucky", "LSU", "Louisville"],
-  "Andrew McCain (Auburn)": ["Missouri", "Oklahoma", "Alabama", "Arkansas", "Auburn", "Florida", "Georgia", "Kentucky", "LSU", "Louisville"],
-  "Cameron Watford (Auburn)": ["Missouri", "Oklahoma", "Alabama", "Arkansas", "Auburn", "Florida", "Georgia", "Kentucky", "Clemson", "Ole Miss"],
-  "Daddy Butch (Auburn)": ["Missouri", "Oklahoma", "Alabama", "Arkansas", "Auburn", "Florida", "Georgia", "Kentucky", "Clemson", "Ole Miss"],
-  "Kyle McCain (Auburn)": ["Missouri", "Oklahoma", "Alabama", "Arkansas", "Auburn", "Florida", "Georgia", "Kentucky", "LSU", "Louisville"],
-  "Mattie Palmer (Auburn)": ["Missouri", "Oklahoma", "Alabama", "Arkansas", "Auburn", "Florida", "Georgia", "Kentucky", "Clemson", "Ole Miss"],
-  "Millie Palmer (Auburn)": ["Missouri", "Oklahoma", "Alabama", "Arkansas", "Auburn", "Florida", "Georgia", "Kentucky", "Clemson", "Ole Miss"],
-  "Rylin Watford (Auburn)": ["Missouri", "Oklahoma", "Alabama", "Arkansas", "Auburn", "Florida", "Georgia", "Kentucky", "Clemson", "Ole Miss"],
-  "Scott Palmer (Auburn)": ["Missouri", "Oklahoma", "Alabama", "Arkansas", "Auburn", "Florida", "Georgia", "Kentucky", "Clemson", "Louisville"],
-};
 
 function picksForPlayer(name, games){
   games = games || sampleGames;
@@ -1734,7 +1648,6 @@ function renderCrmStats(){
   document.getElementById('crmTotalPlayers').textContent = roster.length;
   document.getElementById('crmAvgComplete').textContent = avgPct + '%';
   document.getElementById('crmIncomplete').textContent = incompleteCount;
-  document.getElementById('crmLastImport').textContent = '2h ago';
 }
 
 let crmFilter = 'all';
@@ -1829,18 +1742,19 @@ function savePlayerEdit(oldName){
   openDrawer(newName); // reopen on the updated record
 }
 
-function openDrawer(name){
+// Refreshes just the drawer's header profile + stat tiles (points, record,
+// champ pick, completion) without touching the picks table \u2014 used after a
+// pick edit, so we don't rebuild the whole table on top of itself.
+function openDrawerStatsOnly(name){
   const roster = enrichWeek(CURRENT_WEEK);
   const idx = roster.findIndex(p=>p.name===name);
   const p = roster[idx];
   const comp = playerCompletion(name);
-
   document.getElementById('drawerProfile').innerHTML = `
     <div class="av">${initials(name)}</div>
     <div><div class="nm">${name}</div><div class="tm">${p.team} &middot; Rank #${idx+1}</div></div>
     <button class="edit-btn" id="editPlayerBtn">Edit</button>
   `;
-  document.getElementById('editFormHost').innerHTML = '';
   document.getElementById('editPlayerBtn').addEventListener('click', ()=>openEditForm(name));
   document.getElementById('drawerStats').innerHTML = `
     <div class="ds"><div class="n">${p.pts}</div><div class="l">Points</div></div>
@@ -1848,9 +1762,14 @@ function openDrawer(name){
     <div class="ds"><div class="n">${champPicks[name]||'\u2013'}</div><div class="l">Champ pick</div></div>
     <div class="ds"><div class="n" style="${comp.done<comp.total?'color:var(--crimson);':''}">${comp.done}/${comp.total}</div><div class="l">Complete</div></div>
   `;
+  document.getElementById('picksCount').textContent = `(${comp.total} games \u2014 scroll to see all)`;
+}
+
+function openDrawer(name){
+  openDrawerStatsOnly(name);
+  document.getElementById('editFormHost').innerHTML = '';
   drawerQuery = '';
   document.getElementById('picksSearch').value = '';
-  document.getElementById('picksCount').textContent = `(${comp.total} games \u2014 scroll to see all)`;
   renderPicksTable(name);
   document.getElementById('playerDrawer').classList.add('open');
   document.getElementById('drawerBackdrop').classList.add('open');
@@ -1861,21 +1780,15 @@ function closeDrawer(){
   document.getElementById('drawerBackdrop').classList.remove('open');
 }
 
-const drawerPicksOverride = {}; // name -> {gameIndex: 'a'|'b'}
 function renderPicksTable(name){
-  let picks = picksForPlayer(name, fullGameSet).map((g,i)=>{
-    const override = drawerPicksOverride[name]?.[i];
-    if(override) return {...g, pick: override==='a'?g.a:g.b};
-    return g;
-  });
+  let picks = picksForPlayer(name, fullGameSet);
   if(drawerQuery){
     picks = picks.filter((g,i)=> (g.a+g.b).toLowerCase().includes(drawerQuery.toLowerCase()));
   }
   const table = document.getElementById('picksTable');
   table.innerHTML = `<tr><th>Wk</th><th>Matchup</th><th>Pick</th><th></th></tr>` +
     picksForPlayer(name, fullGameSet).map((g,i)=>{
-      const override = drawerPicksOverride[name]?.[i];
-      const pick = override ? (override==='a'?g.a:g.b) : g.pick;
+      const pick = g.pick;
       if(drawerQuery && !(g.a+g.b).toLowerCase().includes(drawerQuery.toLowerCase())) return '';
       const correct = pick ? pick===g.winner : null;
       return `<tr data-i="${i}">
@@ -1898,48 +1811,19 @@ function renderPicksTable(name){
       </div>`;
       td.querySelectorAll('button').forEach(btn=>{
         btn.addEventListener('click', ()=>{
-          if(!drawerPicksOverride[name]) drawerPicksOverride[name] = {};
-          drawerPicksOverride[name][i] = btn.dataset.side;
+          // Write the real pick, not a display-only overlay \u2014 SEASON.picks[name]
+          // is indexed identically to SEASON.games, so i lines up directly.
+          if(!SEASON.picks[name]) SEASON.picks[name] = [];
+          SEASON.picks[name][i] = btn.dataset.side==='a' ? g.a : g.b;
           renderPicksTable(name);
+          refreshAfterDataChange({rerenderEnter:false});
+          // the drawer's own header tiles (points/accuracy/completion) need a
+          // refresh too, since a pick edit can change all three
+          openDrawerStatsOnly(name);
         });
       });
     });
   });
-}
-
-/* ---- import modal ---- */
-function openImportModal(){
-  document.getElementById('importBody').innerHTML = `
-    <div class="import-drop" id="importDrop">
-      <b>Drop a submission file here</b>xlsx, csv, or pdf &mdash; or click to browse
-      <input type="file" id="importFile" style="display:none" accept=".xlsx,.csv,.pdf">
-    </div>
-  `;
-  document.getElementById('importDrop').addEventListener('click', ()=> document.getElementById('importFile').click());
-  document.getElementById('importFile').addEventListener('change', (e)=>{
-    const f = e.target.files[0];
-    if(!f) return;
-    const guessedName = f.name.replace(/[_-]/g,' ').replace(/\.(xlsx|csv|pdf)$/i,'').replace(/submission/i,'').trim();
-    document.getElementById('importBody').innerHTML = `
-      <div class="import-preview">
-        <div class="row"><span>File</span><b>${f.name}</b></div>
-        <div class="row"><span>Detected name</span><b>${guessedName || 'Unrecognized \u2014 confirm manually'}</b></div>
-        <div class="row"><span>Picks parsed</span><b>120 / 120</b></div>
-        <div class="row"><span>Champion pick</span><b>Georgia</b></div>
-        <div class="row"><span>Status</span><b style="color:var(--green);">Ready to add</b></div>
-      </div>
-      <div class="import-actions">
-        <button class="btn crimson" id="importConfirm">Add to roster</button>
-        <button class="btn ghost" id="importCancel">Cancel</button>
-      </div>
-    `;
-    document.getElementById('importConfirm').addEventListener('click', closeImportModal);
-    document.getElementById('importCancel').addEventListener('click', openImportModal);
-  });
-  document.getElementById('importBackdrop').classList.add('open');
-}
-function closeImportModal(){
-  document.getElementById('importBackdrop').classList.remove('open');
 }
 
 // Downloads a fresh copy of THIS SAME page with the current (edited) SEASON
@@ -2070,11 +1954,6 @@ document.getElementById('picksSearch').addEventListener('input', (e)=>{
   drawerQuery = e.target.value;
   renderPicksTable(document.getElementById('playerDrawer').dataset.name);
 });
-document.getElementById('importBtn').addEventListener('click', openImportModal);
-document.getElementById('importClose').addEventListener('click', closeImportModal);
-document.getElementById('importBackdrop').addEventListener('click', (e)=>{
-  if(e.target.id==='importBackdrop') closeImportModal();
-});
 document.getElementById('exportBtn').addEventListener('click', exportFullDataset);
 document.getElementById('downloadSiteBtn').addEventListener('click', exportUpdatedSite);
 
@@ -2113,6 +1992,15 @@ function switchView(view){
   window.scrollTo(0,0);
 }
 
+// Manage Players has no nav button, by design \u2014 it's only reachable by opening
+// a link ending in #manage (bookmark it for yourself). This is hiding it from
+// casual browsing, not real security: anyone who reads the page source or
+// guesses the hash can still get in.
+function checkHashRoute(){
+  if(window.location.hash === '#manage') switchView('io');
+}
+window.addEventListener('hashchange', checkHashRoute);
+
 /* ---------- NAV ---------- */
 document.getElementById('nav').addEventListener('click', (e)=>{
   const btn = e.target.closest('button[data-view]');
@@ -2136,4 +2024,5 @@ renderCrmStats();
 renderCrmTable();
 populateScorecardSelects();
 buildMoreSheet();
+checkHashRoute();
 </script>
