@@ -471,9 +471,12 @@ table.heat td.trend{font-weight:700;}
   .side{position:fixed;bottom:0;left:0;right:0;top:auto;z-index:40;flex-direction:row;padding:0;
     height:auto;background:rgba(11,31,58,.97);backdrop-filter:saturate(180%) blur(18px);
     -webkit-backdrop-filter:saturate(180%) blur(18px);
-    border-top:.5px solid rgba(255,255,255,.16);box-shadow:none;}
+    border-top:.5px solid rgba(255,255,255,.16);box-shadow:none;
+    padding-bottom:env(safe-area-inset-bottom);}
   .brand, .side-foot{display:none;}
-  .nav{flex-direction:row;margin:0;width:100%;gap:0;padding-bottom:env(safe-area-inset-bottom);}
+  /* .nav no longer has its own box on mobile \u2014 its buttons become direct flex
+     items of .side, sitting alongside the More tab in one 5-item row */
+  .nav{display:contents;}
   /* only the 4 primary tabs + More live in the bar */
   .nav button[data-tier="secondary"]{display:none;}
   .nav button, .more-tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
@@ -601,8 +604,8 @@ table.heat td.trend{font-weight:700;}
       <button data-view="enter" data-tier="secondary" data-short="Enter">&#9989; Enter results</button>
       <button data-view="analytics" data-tier="secondary" data-short="Analytics">&#129504; Analytics</button>
       <button data-view="io" data-tier="secondary" data-short="Players">&#128100; Manage players</button>
-      <button class="more-tab" id="moreTab" data-short="More">&#9776; More</button>
     </div>
+    <button class="more-tab" id="moreTab" data-short="More">&#9776; More</button>
     <div class="side-foot">
       <b id="sfPlayers">21 players</b> loaded<br>
       <span id="sfWeek">Week 1 of 13</span><br>
