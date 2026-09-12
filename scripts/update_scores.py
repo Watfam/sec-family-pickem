@@ -102,21 +102,33 @@ def main():
     print(f"{len(undecided)} undecided game(s) in the schedule. Checking CFBD...")
 
     # Pull each SEC team's full-season game list once, build one lookup keyed
-    # by (date, sorted team pair) so we're not re-querying per game.
+    # by the pair of teams playing (not the date). Matching on date was the
+    # original approach, but CFBD reports kickoff time in UTC, and a normal
+    # evening kickoff in the US rolls over into the next UTC calendar day \u2014
+    # that silently broke the match for almost every game. Each SEC team only
+    # plays every other team once a season, so the team pair alone is a safe,
+    # unambiguous key on its own.
     cfbd_by_key = {}
+    sample_logged = False
     for team in SEC_TEAMS:
-        for g in fetch_games_for_team(team, api_key):
+        team_games = fetch_games_for_team(team, api_key)
+        if not sample_logged and team_games:
+            g0 = team_games[0]
+            print(f"  (sample CFBD game for {team}: {g0.get('awayTeam')} @ "
+                  f"{g0.get('homeTeam')}, completed={g0.get('completed')}, "
+                  f"date={g0.get('startDate')})", file=sys.stderr)
+            sample_logged = True
+        for g in team_games:
             if not g.get("completed"):
                 continue
             home = our_name(g["homeTeam"])
             away = our_name(g["awayTeam"])
-            date = (g.get("startDate") or "")[:10]  # YYYY-MM-DD
-            key = (date, frozenset([home, away]))
+            key = frozenset([home, away])
             cfbd_by_key[key] = g
 
     changed = False
     for i, g in undecided:
-        key = (g["when"], frozenset([g["a"], g["b"]]))
+        key = frozenset([g["a"], g["b"]])
         match_game = cfbd_by_key.get(key)
         if not match_game:
             continue  # not final yet, or a genuine mismatch to look into
