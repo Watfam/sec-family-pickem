@@ -6,16 +6,21 @@ time, venue, TV network, betting line, and excitement index for every game
 (not just decided ones, so upcoming games get real detail too).
 
 Runs unattended inside a GitHub Actions workflow (see
-.github/workflows/update-scores.yml) \u2014 this is not something you run by
+.github/workflows/update-scores.yml) — this is not something you run by
 hand week to week; the whole point is that you don't have to.
 
 Requires one environment variable:
-  CFBD_API_KEY  \u2014 a free key from https://collegefootballdata.com/key
+  CFBD_API_KEY  — a free key from https://collegefootballdata.com/key
                   (stored as a GitHub Actions secret, never in this file)
 
 Exits 0 whether or not anything changed. Prints "CHANGES_MADE" as the last
 line of output if index.html was modified, so the workflow step that follows
 this one can decide whether there's anything worth committing.
+
+API usage note: every SEC team's data is pulled in ONE call per endpoint
+using CFBD's conference=SEC filter (3 calls total per run: games, media,
+lines) rather than looping per-team (which used to be 48 calls/run and
+blew through CFBD's free-tier cap of 1,000 calls/month within days).
 """
 
 import json
@@ -30,21 +35,15 @@ INDEX_HTML = "index.html"
 SEASON_YEAR = 2026
 
 # Your schedule uses a few shorthand team names that don't match CFBD's
-# official naming. Add to this if a game silently fails to match \u2014 that's
+# official naming. Add to this if a game silently fails to match — that's
 # almost always a naming mismatch, not a real problem with the approach.
 NAME_TO_CFBD = {
     "Miss State": "Mississippi State",
 }
 CFBD_TO_NAME = {v: k for k, v in NAME_TO_CFBD.items()}
 
-SEC_TEAMS = [
-    "Alabama", "Arkansas", "Auburn", "Florida", "Georgia", "Kentucky", "LSU",
-    "Miss State", "Missouri", "Oklahoma", "Ole Miss", "South Carolina",
-    "Tennessee", "Texas", "Texas A&M", "Vanderbilt",
-]
-
 # Preference order for whose betting line to show when a game has several
-# (CFBD aggregates multiple sportsbooks) \u2014 falls back to whichever the API
+# (CFBD aggregates multiple sportsbooks) — falls back to whichever the API
 # lists first if none of these are present.
 PREFERRED_LINE_PROVIDERS = ["consensus", "DraftKings", "Bovada", "ESPN Bet"]
 
@@ -74,16 +73,19 @@ def cfbd_get(path, params, api_key):
         return []
 
 
-def fetch_games_for_team(team, api_key):
-    return cfbd_get("games", {"year": SEASON_YEAR, "team": cfbd_name(team)}, api_key)
+def fetch_conference_games(api_key):
+    """One call, all 16 SEC teams' games for the season."""
+    return cfbd_get("games", {"year": SEASON_YEAR, "conference": "SEC"}, api_key)
 
 
-def fetch_media_for_team(team, api_key):
-    return cfbd_get("games/media", {"year": SEASON_YEAR, "team": cfbd_name(team)}, api_key)
+def fetch_conference_media(api_key):
+    """One call, all 16 SEC teams' TV info for the season."""
+    return cfbd_get("games/media", {"year": SEASON_YEAR, "conference": "SEC"}, api_key)
 
 
-def fetch_lines_for_team(team, api_key):
-    return cfbd_get("lines", {"year": SEASON_YEAR, "team": cfbd_name(team)}, api_key)
+def fetch_conference_lines(api_key):
+    """One call, all 16 SEC teams' betting lines for the season."""
+    return cfbd_get("lines", {"year": SEASON_YEAR, "conference": "SEC"}, api_key)
 
 
 def pick_line(lines_list):
@@ -127,21 +129,20 @@ def main():
         by_key[frozenset([g["a"], g["b"]])] = i
 
     changed = False
-    sample_logged = {"games": False, "media": False, "lines": False}
 
-    # ---- scores, kickoff time, venue, excitement (one endpoint) ----
+    # ---- scores, kickoff time, venue, excitement (one call, all teams) ----
+    conf_games = fetch_conference_games(api_key)
+    if conf_games:
+        g0 = conf_games[0]
+        print(f"  (sample CFBD game: {g0.get('awayTeam')} @ "
+              f"{g0.get('homeTeam')}, completed={g0.get('completed')}, "
+              f"date={g0.get('startDate')}) — {len(conf_games)} games returned",
+              file=sys.stderr)
+
     games_by_key = {}
-    for team in SEC_TEAMS:
-        team_games = fetch_games_for_team(team, api_key)
-        if not sample_logged["games"] and team_games:
-            g0 = team_games[0]
-            print(f"  (sample CFBD game for {team}: {g0.get('awayTeam')} @ "
-                  f"{g0.get('homeTeam')}, completed={g0.get('completed')}, "
-                  f"date={g0.get('startDate')})", file=sys.stderr)
-            sample_logged["games"] = True
-        for g in team_games:
-            key = frozenset([our_name(g["homeTeam"]), our_name(g["awayTeam"])])
-            games_by_key[key] = g
+    for g in conf_games:
+        key = frozenset([our_name(g["homeTeam"]), our_name(g["awayTeam"])])
+        games_by_key[key] = g
 
     for key, i in by_key.items():
         cg = games_by_key.get(key)
@@ -176,20 +177,20 @@ def main():
                 g["winner"] = winner
                 g["score"] = f"{hi}-{lo}"
                 changed = True
-                print(f"  \u2713 score: {g['a']} vs {g['b']} ({g['when']}) -> {winner} ({hi}-{lo})")
+                print(f"  ✓ score: {g['a']} vs {g['b']} ({g['when']}) -> {winner} ({hi}-{lo})")
 
-    # ---- TV network (separate endpoint) ----
+    # ---- TV network (one call, all teams) ----
+    conf_media = fetch_conference_media(api_key)
+    if conf_media:
+        print(f"  (sample CFBD media: {conf_media[0]}) — {len(conf_media)} entries returned",
+              file=sys.stderr)
+
     media_by_key = {}
-    for team in SEC_TEAMS:
-        team_media = fetch_media_for_team(team, api_key)
-        if not sample_logged["media"] and team_media:
-            print(f"  (sample CFBD media for {team}: {team_media[0]})", file=sys.stderr)
-            sample_logged["media"] = True
-        for m_ in team_media:
-            if m_.get("mediaType") and m_["mediaType"] != "tv":
-                continue
-            key = frozenset([our_name(m_["homeTeam"]), our_name(m_["awayTeam"])])
-            media_by_key[key] = m_
+    for m_ in conf_media:
+        if m_.get("mediaType") and m_["mediaType"] != "tv":
+            continue
+        key = frozenset([our_name(m_["homeTeam"]), our_name(m_["awayTeam"])])
+        media_by_key[key] = m_
 
     for key, i in by_key.items():
         m_ = media_by_key.get(key)
@@ -197,16 +198,16 @@ def main():
             games[i]["tv"] = m_["outlet"]
             changed = True
 
-    # ---- betting line (separate endpoint) ----
+    # ---- betting line (one call, all teams) ----
+    conf_lines = fetch_conference_lines(api_key)
+    if conf_lines:
+        print(f"  (sample CFBD lines entry: {conf_lines[0]}) — {len(conf_lines)} entries returned",
+              file=sys.stderr)
+
     lines_by_key = {}
-    for team in SEC_TEAMS:
-        team_lines = fetch_lines_for_team(team, api_key)
-        if not sample_logged["lines"] and team_lines:
-            print(f"  (sample CFBD lines entry for {team}: {team_lines[0]})", file=sys.stderr)
-            sample_logged["lines"] = True
-        for gl in team_lines:
-            key = frozenset([our_name(gl.get("homeTeam", "")), our_name(gl.get("awayTeam", ""))])
-            lines_by_key[key] = gl
+    for gl in conf_lines:
+        key = frozenset([our_name(gl.get("homeTeam", "")), our_name(gl.get("awayTeam", ""))])
+        lines_by_key[key] = gl
 
     for key, i in by_key.items():
         gl = lines_by_key.get(key)
@@ -227,7 +228,7 @@ def main():
             changed = True
 
     if not changed:
-        print("Checked CFBD \u2014 nothing new to update (scores, times, odds all already current).")
+        print("Checked CFBD — nothing new to update (scores, times, odds all already current).")
         return
 
     html = save_season(html, season, match)
